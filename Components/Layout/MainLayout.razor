@@ -3,6 +3,7 @@
 @inject IJSRuntime JS
 
 <MudThemeProvider Theme="@GetTheme()" IsDarkMode="_isDarkMode" DefaultScrollbar="false" />
+<MudPopoverProvider />
 <MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
 <MudSnackbarProvider />
 
@@ -24,10 +25,10 @@
             </div>
 
             <div class="navbar-actions">
-                <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.Light : Icons.Material.Filled.DarkMode)" 
-                              OnClick="ToggleTheme" 
-                              Class="theme-toggle" 
-                              Title="@(_isDarkMode ? "Light Mode" : "Dark Mode")" />
+                <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.Light : Icons.Material.Filled.DarkMode)"
+                               OnClick="ToggleTheme"
+                               Class="theme-toggle"
+                               Title="@(_isDarkMode ? "Light Mode" : "Dark Mode")" />
             </div>
         </div>
     </nav>
