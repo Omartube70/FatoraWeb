@@ -1,0 +1,80 @@
+@namespace Fatora.Components.Shared
+
+<section class="testimonials-section">
+    <div class="testimonials-container">
+        <h2 class="section-title">What Our Customers Say</h2>
+        <p class="section-subtitle">Trusted by businesses across the region</p>
+
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="stars">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="star-fill" />
+                    }
+                </div>
+                <p class="testimonial-text">
+                    "Fatora POS transformed how we manage our retail business. The interface is intuitive, 
+                    and the inventory management feature has saved us countless hours."
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">
+                        <img src="https://ui-avatars.com/api/?name=Ahmed+Hassan&background=6C4CF1&color=fff" alt="Ahmed Hassan" class="avatar-img" />
+                    </div>
+                    <div class="author-info">
+                        <h4>Ahmed Hassan</h4>
+                        <p>Owner, Hassan Electronics Store</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="stars">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="star-fill" />
+                    }
+                </div>
+                <p class="testimonial-text">
+                    "The reporting features are incredible. We can now analyze our sales data in real-time 
+                    and make data-driven decisions for our business."
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">
+                        <img src="https://ui-avatars.com/api/?name=Fatima+Ibrahim&background=8B5CF6&color=fff" alt="Fatima Ibrahim" class="avatar-img" />
+                    </div>
+                    <div class="author-info">
+                        <h4>Fatima Ibrahim</h4>
+                        <p>Manager, Cairo Fashion Boutique</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="stars">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" class="star-fill" />
+                    }
+                </div>
+                <p class="testimonial-text">
+                    "Excellent customer support! The team went above and beyond to help us set up and 
+                    customize Fatora for our supermarket operations."
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">
+                        <img src="https://ui-avatars.com/api/?name=Mohammed+Ali&background=22C55E&color=fff" alt="Mohammed Ali" class="avatar-img" />
+                    </div>
+                    <div class="author-info">
+                        <h4>Mohammed Ali</h4>
+                        <p>General Manager, Capital Supermarket</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    // Testimonials section component
+}

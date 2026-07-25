@@ -1,0 +1,89 @@
+﻿@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<MudThemeProvider Theme="@GetTheme()" IsDarkMode="_isDarkMode" DefaultScrollbar="false" />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
+<MudSnackbarProvider />
+
+<div class="layout-wrapper">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <img src="/images/Icon.ico" alt="Fatora Logo" class="brand-logo" />
+                <span class="brand-text">Fatora</span>
+            </div>
+
+            <div class="navbar-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+
+            <div class="navbar-actions">
+                <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.Light : Icons.Material.Filled.DarkMode)" 
+                              OnClick="ToggleTheme" 
+                              Class="theme-toggle" 
+                              Title="@(_isDarkMode ? "Light Mode" : "Dark Mode")" />
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        @Body
+    </main>
+
+    <!-- Footer -->
+    <Footer />
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+</div>
+
+@code {
+    private bool _isDarkMode = false;
+    private IJSObjectReference? _module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Layout/MainLayout.razor.js");
+            var savedDarkMode = await _module.InvokeAsync<bool>("getDarkModePreference");
+            if (savedDarkMode != _isDarkMode)
+            {
+                _isDarkMode = savedDarkMode;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private MudTheme GetTheme()
+    {
+        return ThemeProvider.GetFatoraTheme();
+    }
+
+    private async Task ToggleTheme()
+    {
+        _isDarkMode = !_isDarkMode;
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("saveDarkModePreference", _isDarkMode);
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+}

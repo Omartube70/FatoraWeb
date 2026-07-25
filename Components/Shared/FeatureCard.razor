@@ -1,0 +1,20 @@
+@namespace Fatora.Components.Shared
+
+<div class="feature-card">
+    <div class="feature-icon">
+        <MudIcon Icon="@Icon" Size="Size.Medium" />
+    </div>
+    <h3 class="feature-title">@Title</h3>
+    <p class="feature-description">@Description</p>
+</div>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Info;
+
+    [Parameter]
+    public string Title { get; set; } = "Feature";
+
+    [Parameter]
+    public string Description { get; set; } = "Description";
+}

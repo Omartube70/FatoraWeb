@@ -1,0 +1,149 @@
+/* Button Images Styling */
+
+/* Image in Button Container */
+.button-img-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Button Images */
+.button-img {
+    height: 14px;
+    width: auto;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.download-btn .button-img {
+    height: 12px;
+}
+
+.hero-btn .button-img {
+    height: 12px;
+}
+
+.primary-btn .button-img {
+    filter: drop-shadow(0 2px 4px rgba(108, 76, 241, 0.2));
+}
+
+.secondary-btn .button-img {
+    filter: drop-shadow(0 2px 4px rgba(108, 76, 241, 0.15));
+}
+
+/* Hover Effects for Button Images */
+.download-btn:hover .button-img {
+    transform: scale(1.1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.hero-btn:hover .button-img {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 3px 6px rgba(108, 76, 241, 0.25));
+}
+
+.pricing-main-button:hover .button-img {
+    transform: scale(1.15);
+    filter: drop-shadow(0 4px 10px rgba(108, 76, 241, 0.3));
+}
+
+.trial-button:hover .button-img {
+    transform: rotate(5deg) scale(1.1);
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* Icon and Image Together */
+.btn-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-with-icon .button-img {
+    height: 18px;
+    margin-right: 2px;
+}
+
+.btn-with-icon .btn-icon {
+    margin-right: 2px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .button-img {
+        height: 12px;
+    }
+
+    .download-btn .button-img {
+        height: 10px;
+    }
+
+    .hero-btn .button-img {
+        height: 10px;
+    }
+
+    .button-img-container {
+        gap: 6px;
+    }
+
+    .btn-with-icon {
+        gap: 4px;
+    }
+
+    .btn-with-icon .button-img {
+        height: 10px;
+    }
+}
+
+/* Download Section Large Button */
+.download-main-button .button-img {
+    height: 16px;
+    margin-right: 6px;
+}
+
+.download-main-button:hover .button-img {
+    transform: scale(1.2);
+    filter: drop-shadow(0 5px 12px rgba(34, 197, 94, 0.3));
+}
+
+/* Animated Download Icon */
+.download-icon-animated {
+    animation: downloadBounce 2s ease-in-out infinite;
+}
+
+@keyframes downloadBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+/* Button Text and Image Alignment */
+.button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .button-img,
+    .download-icon-animated {
+        animation: none;
+        transition: none;
+    }
+
+    .download-btn:hover .button-img,
+    .hero-btn:hover .button-img,
+    .pricing-main-button:hover .button-img,
+    .trial-button:hover .button-img {
+        transform: none;
+    }
+}

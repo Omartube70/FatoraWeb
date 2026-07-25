@@ -1,0 +1,141 @@
+@namespace Fatora.Components.Shared
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<section class="gallery-section" id="gallery">
+    <div class="gallery-container">
+        <h2 class="section-title">Screenshots Gallery</h2>
+        <p class="section-subtitle">See Fatora POS in action</p>
+
+        <div class="gallery-grid">
+            @foreach (var image in GalleryImages)
+            {
+                <div class="gallery-item" @key="image.Id" @onclick="() => OpenLightbox(image)">
+                    <img src="@image.Thumbnail" alt="@image.Title" class="gallery-image" loading="lazy" />
+                    <div class="gallery-overlay">
+                        <MudIcon Icon="@Icons.Material.Filled.ZoomIn" Size="Size.Medium" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (SelectedImage != null)
+    {
+        <div class="lightbox" @onclick="CloseLightbox" @onkeydown="HandleKeydown">
+            <div class="lightbox-content" @onclick:stopPropagation="true">
+                <button class="lightbox-close" @onclick="CloseLightbox">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Medium" />
+                </button>
+
+                <button class="lightbox-nav lightbox-prev" @onclick="PreviousImage" title="Previous">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Medium" />
+                </button>
+
+                <div class="lightbox-image-wrapper">
+                    <img src="@SelectedImage.Full" alt="@SelectedImage.Title" class="lightbox-image" />
+                </div>
+
+                <button class="lightbox-nav lightbox-next" @onclick="NextImage" title="Next">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Medium" />
+                </button>
+
+                <div class="lightbox-caption">
+                    <h3>@SelectedImage.Title</h3>
+                    <p>@SelectedImage.Description</p>
+                    <span class="lightbox-counter">@(CurrentImageIndex + 1) / @GalleryImages.Count</span>
+                </div>
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    private class GalleryImage
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Thumbnail { get; set; } = "";
+        public string Full { get; set; } = "";
+    }
+
+    private List<GalleryImage> GalleryImages = new();
+    private GalleryImage? SelectedImage = null;
+    private int CurrentImageIndex = 0;
+    private IJSObjectReference? _module;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize sample gallery images with actual screenshots
+        GalleryImages = new List<GalleryImage>
+        {
+            new GalleryImage { Id = 1, Title = "Dashboard Overview", Description = "Main dashboard with business metrics", Thumbnail = "/images/Screenshot 2026-07-25 230034.png", Full = "/images/Screenshot 2026-07-25 230034.png" },
+            new GalleryImage { Id = 2, Title = "Sales Management", Description = "Comprehensive sales tracking", Thumbnail = "/images/Screenshot 2026-07-25 230039.png", Full = "/images/Screenshot 2026-07-25 230039.png" },
+            new GalleryImage { Id = 3, Title = "Inventory Control", Description = "Real-time inventory management", Thumbnail = "/images/Screenshot 2026-07-25 230052.png", Full = "/images/Screenshot 2026-07-25 230052.png" },
+            new GalleryImage { Id = 4, Title = "Customer Database", Description = "Manage customer information", Thumbnail = "/images/Screenshot 2026-07-25 230102.png", Full = "/images/Screenshot 2026-07-25 230102.png" },
+            new GalleryImage { Id = 5, Title = "Reports & Analytics", Description = "Detailed business reports", Thumbnail = "/images/Screenshot 2026-07-25 230109.png", Full = "/images/Screenshot 2026-07-25 230109.png" },
+            new GalleryImage { Id = 6, Title = "Settings & Configuration", Description = "Flexible system configuration", Thumbnail = "/images/Screenshot 2026-07-25 230114.png", Full = "/images/Screenshot 2026-07-25 230114.png" },
+            new GalleryImage { Id = 7, Title = "Advanced Features", Description = "Powerful tools for your business", Thumbnail = "/images/Screenshot 2026-07-25 230148.png", Full = "/images/Screenshot 2026-07-25 230148.png" },
+            new GalleryImage { Id = 8, Title = "User Management", Description = "Control user access and roles", Thumbnail = "/images/Screenshot 2026-07-25 230155.png", Full = "/images/Screenshot 2026-07-25 230155.png" },
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/GallerySection.razor.js");
+        }
+    }
+
+    private void OpenLightbox(GalleryImage image)
+    {
+        SelectedImage = image;
+        CurrentImageIndex = GalleryImages.IndexOf(image);
+        StateHasChanged();
+    }
+
+    private void CloseLightbox()
+    {
+        SelectedImage = null;
+    }
+
+    private void NextImage()
+    {
+        if (SelectedImage == null) return;
+        CurrentImageIndex = (CurrentImageIndex + 1) % GalleryImages.Count;
+        SelectedImage = GalleryImages[CurrentImageIndex];
+    }
+
+    private void PreviousImage()
+    {
+        if (SelectedImage == null) return;
+        CurrentImageIndex = (CurrentImageIndex - 1 + GalleryImages.Count) % GalleryImages.Count;
+        SelectedImage = GalleryImages[CurrentImageIndex];
+    }
+
+    private async Task HandleKeydown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowRight":
+                NextImage();
+                break;
+            case "ArrowLeft":
+                PreviousImage();
+                break;
+            case "Escape":
+                CloseLightbox();
+                break;
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+}

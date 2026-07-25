@@ -1,0 +1,91 @@
+@namespace Fatora.Components.Shared
+
+<section class="download-section" id="download">
+    <div class="download-container">
+        <h2 class="section-title">Download Fatora POS v1.0.0</h2>
+        <p class="section-subtitle">Official Stable Release - Get started with your free 7-day trial</p>
+
+        <div class="download-info-grid">
+            <div class="info-card">
+                <h3>Latest Version</h3>
+                <p>v1.0.0</p>
+            </div>
+
+            <div class="info-card">
+                <h3>File Size</h3>
+                <p>275 MB</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Release Date</h3>
+                <p>2 weeks ago</p>
+            </div>
+
+            <div class="info-card">
+                <h3>System Requirements</h3>
+                <p>Windows 7+, .NET Framework 4.8, SQL Server 2019 Express</p>
+            </div>
+        </div>
+
+        <div class="download-actions">
+            <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Medium" Class="download-btn"
+                      Href="https://github.com/Omartube70/Fatora-Releases/releases/download/v1.0.0/FatoraSetup_Version_1.00.exe"
+                      Target="_blank">
+                <div class="button-content">
+                    <img src="/images/Screenshot 2026-07-15 043003.png" alt="Download" class="button-img" />
+                    <MudIcon Icon="@Icons.Material.Filled.GetApp" Class="btn-icon" />
+                    Download v1.0.0 (Stable)
+                </div>
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Class="download-btn"
+                      Href="https://github.com/Omartube70/Fatora-Releases/releases/tag/v1.0.0"
+                      Target="_blank">
+                <div class="button-content">
+                    <MudIcon Icon="@Icons.Material.Filled.Notes" Class="btn-icon" />
+                    Release Notes
+                </div>
+            </MudButton>
+        </div>
+
+        <div class="release-features">
+            <h3 class="features-title">✨ What's Included in v1.0.0</h3>
+            <ul class="features-list">
+                <li><span class="feature-badge">💰</span> Complete Sales & Cashier System with Barcode Scanner support</li>
+                <li><span class="feature-badge">📦</span> Smart Inventory Management with low stock alerts</li>
+                <li><span class="feature-badge">🤝</span> Supplier & Purchase Management with automatic stock updates</li>
+                <li><span class="feature-badge">📊</span> Interactive Dashboard with real-time analytics</li>
+                <li><span class="feature-badge">👥</span> Role-Based Access Control for team management</li>
+                <li><span class="feature-badge">🛡️</span> Enterprise-grade security with SQL Server backend</li>
+                <li><span class="feature-badge">🌍</span> Full Arabic & English interface support</li>
+                <li><span class="feature-badge">🖨️</span> Thermal printer support for receipt printing</li>
+            </ul>
+        </div>
+
+        <div class="installation-guide">
+            <h3 class="guide-title">📥 Installation Steps</h3>
+            <ol class="guide-steps">
+                <li>Download <strong>FatoraSetup_Version_1.00.exe</strong> from the button above</li>
+                <li>Extract <strong>Fatora-Database-Scripts.zip</strong> from GitHub releases</li>
+                <li>Ensure .NET Framework 4.8 and SQL Server 2019 Express are installed</li>
+                <li>Run the installer and follow the setup wizard</li>
+                <li>Default credentials: <strong>Username: Admin</strong>, <strong>Password: Admin@123</strong></li>
+                <li>Change your password immediately after first login</li>
+            </ol>
+        </div>
+
+        <div class="version-history">
+            <h3 class="history-title">📝 Release History</h3>
+            <ul class="history-list">
+                <li class="history-item">
+                    <span class="version-badge latest">v1.0.0</span>
+                    <span class="date">2 weeks ago</span>
+                    <span class="notes">🎉 Official Initial Release - Complete POS System with all features</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+@code {
+    // Download section component
+}

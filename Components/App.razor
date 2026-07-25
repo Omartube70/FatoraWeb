@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Fatora POS - Smart Point of Sale & Inventory Management System. Professional POS solution for managing sales, inventory, customers, and suppliers with advanced analytics and offline support." />
+    <meta name="keywords" content="POS System, Point of Sale, Inventory Management, Sales System, Business Management Software" />
+    <meta name="author" content="Fatora POS" />
+    <meta name="theme-color" content="#6C4CF1" />
+    <meta name="apple-mobile-web-app-capable" content="true" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Fatora POS - Smart Point of Sale & Inventory Management" />
+    <meta property="og:description" content="Professional Point of Sale System for managing sales, inventory, customers, and suppliers with advanced reports and analytics." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fatorapos.com" />
+    <meta property="og:image" content="/images/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Fatora POS" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Fatora POS - Smart Point of Sale & Inventory Management" />
+    <meta name="twitter:description" content="Professional Point of Sale System for managing your business efficiently." />
+    <meta name="twitter:image" content="/images/og-image.png" />
+
+    <!-- Structured Data - JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "context": "https://schema.org/",
+        "type": "SoftwareApplication",
+        "name": "Fatora POS",
+        "description": "Smart Point of Sale & Inventory Management System",
+        "url": "https://fatorapos.com",
+        "image": "/images/logo.png",
+        "applicationCategory": "BusinessApplication",
+        "offers": {
+            "type": "Offer",
+            "price": "4000",
+            "priceCurrency": "EGP",
+            "priceValidUntil": "2025-12-31"
+        },
+        "aggregateRating": {
+            "type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "156"
+        }
+    }
+    </script>
+
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["enhanced-design.css"]" />
+    <link rel="stylesheet" href="@Assets["download-section.css"]" />
+    <link rel="stylesheet" href="@Assets["download-enhanced.css"]" />
+    <link rel="stylesheet" href="@Assets["icons-enhancement.css"]" />
+    <link rel="stylesheet" href="@Assets["buttons-unified.css"]" />
+    <link rel="stylesheet" href="@Assets["button-images.css"]" />
+    <link rel="stylesheet" href="@Assets["Fatora.styles.css"]" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
