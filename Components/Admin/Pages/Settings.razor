@@ -1,0 +1,38 @@
+@page "/admin/settings"
+@layout AdminLayout
+@attribute [Authorize]
+@inject CurrencyService CurrencyFmt
+@inject ISnackbar Snackbar
+
+<PageTitle>الإعدادات - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">الإعدادات</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    إعدادات محلية فقط (لا يوجد Backend لحفظها كإعدادات نظام دائمة حتى الآن).
+</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="1" Style="max-width: 480px;">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">العملة</MudText>
+    <MudTextField @bind-Value="_currencySymbol" Label="رمز العملة المعروض" Variant="Variant.Outlined" Class="mb-3" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveCurrency">حفظ</MudButton>
+</MudPaper>
+
+<MudPaper Class="pa-4" Elevation="1" Style="max-width: 480px;">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">المظهر</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">يمكنك التبديل بين الوضع الداكن والفاتح من الأيقونة أعلى الصفحة.</MudText>
+</MudPaper>
+
+@code {
+    private string _currencySymbol = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _currencySymbol = CurrencyFmt.CurrencySymbol;
+    }
+
+    private void SaveCurrency()
+    {
+        CurrencyFmt.CurrencySymbol = _currencySymbol;
+        Snackbar.Add("تم حفظ الإعدادات", Severity.Success);
+    }
+}

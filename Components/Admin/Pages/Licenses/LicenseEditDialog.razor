@@ -1,0 +1,83 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">تعديل الترخيص</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="_model" @ref="_form">
+            <MudSelect T="int" @bind-Value="_model.PlanId" Label="الباقة" Variant="Variant.Outlined" Class="mb-3" Required="true">
+                @foreach (var plan in Plans)
+                {
+                    <MudSelectItem T="int" Value="@plan.PlanId">@plan.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="_model.MaxDevices" Label="أقصى عدد أجهزة" Variant="Variant.Outlined" Class="mb-3" Required="true" Min="1" />
+            <MudDatePicker @bind-Date="_expiryDate" Label="تاريخ الانتهاء" Variant="Variant.Outlined" Required="true" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">إلغاء</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            حفظ
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private LicensesService LicensesApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter, EditorRequired] public LicenseDto Existing { get; set; } = default!;
+    [Parameter] public List<PlanDto> Plans { get; set; } = new();
+
+    private MudForm _form = default!;
+    private bool _saving;
+    private DateTime? _expiryDate;
+
+    private class FormModel
+    {
+        public int PlanId { get; set; }
+        public int MaxDevices { get; set; }
+    }
+
+    private FormModel _model = new();
+
+    protected override void OnInitialized()
+    {
+        _model = new FormModel { PlanId = Existing.PlanId, MaxDevices = Existing.MaxDevices };
+        _expiryDate = Existing.ExpiryDate;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid || _saving || _expiryDate is null) return;
+
+        _saving = true;
+        try
+        {
+            await LicensesApi.UpdateAsync(Existing.LicenseId, new UpdateLicenseRequest
+            {
+                PlanId = _model.PlanId,
+                MaxDevices = _model.MaxDevices,
+                ExpiryDate = _expiryDate.Value
+            });
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

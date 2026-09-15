@@ -1,0 +1,118 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "تعديل الباقة" : "باقة جديدة")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="_model" @ref="_form">
+            <MudTextField @bind-Value="_model.Name" Label="اسم الباقة" Variant="Variant.Outlined" Class="mb-3"
+                          Required="true" RequiredError="اسم الباقة مطلوب" MaxLength="100" />
+            <MudTextField @bind-Value="_model.Description" Label="الوصف" Variant="Variant.Outlined" Lines="2" Class="mb-3" />
+            <MudNumericField @bind-Value="_model.DurationDays" Label="مدة الباقة (أيام)" Variant="Variant.Outlined" Class="mb-3"
+                              Required="true" Min="1" />
+            <MudNumericField @bind-Value="_model.MaxDevices" Label="أقصى عدد أجهزة" Variant="Variant.Outlined" Class="mb-3"
+                              Required="true" Min="1" />
+            <MudNumericField @bind-Value="_model.Price" Label="السعر" Variant="Variant.Outlined" Class="mb-3"
+                              Required="true" Min="0" Format="N2" />
+            @if (IsEdit)
+            {
+                <MudSwitch T="bool" @bind-Value="_model.IsActive" Color="Color.Success" Label="مفعّلة" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">إلغاء</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            حفظ
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private PlansService PlansApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] public PlanDto? Existing { get; set; }
+
+    private bool IsEdit => Existing is not null;
+    private MudForm _form = default!;
+    private bool _saving;
+
+    private class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int DurationDays { get; set; } = 30;
+        public int MaxDevices { get; set; } = 1;
+        public decimal Price { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private FormModel _model = new();
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null)
+        {
+            _model = new FormModel
+            {
+                Name = Existing.Name,
+                Description = Existing.Description,
+                DurationDays = Existing.DurationDays,
+                MaxDevices = Existing.MaxDevices,
+                Price = Existing.Price,
+                IsActive = Existing.IsActive
+            };
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid || _saving) return;
+
+        _saving = true;
+        try
+        {
+            if (IsEdit)
+            {
+                await PlansApi.UpdateAsync(Existing!.PlanId, new UpdatePlanRequest
+                {
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    DurationDays = _model.DurationDays,
+                    MaxDevices = _model.MaxDevices,
+                    Price = _model.Price,
+                    IsActive = _model.IsActive
+                });
+            }
+            else
+            {
+                await PlansApi.CreateAsync(new CreatePlanRequest
+                {
+                    Name = _model.Name,
+                    Description = _model.Description,
+                    DurationDays = _model.DurationDays,
+                    MaxDevices = _model.MaxDevices,
+                    Price = _model.Price
+                });
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

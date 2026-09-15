@@ -1,0 +1,57 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">تجديد الترخيص</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-3">سيتم تجديد الترخيص بنفس الباقة الحالية، إلا إذا اخترت باقة جديدة:</MudText>
+        <MudSelect T="int?" @bind-Value="_newPlanId" Label="باقة جديدة (اختياري)" Variant="Variant.Outlined" Clearable="true">
+            @foreach (var plan in Plans.Where(p => p.IsActive))
+            {
+                <MudSelectItem T="int?" Value="@plan.PlanId">@plan.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">إلغاء</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            تجديد
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private LicensesService LicensesApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter, EditorRequired] public int LicenseId { get; set; }
+    [Parameter] public List<PlanDto> Plans { get; set; } = new();
+
+    private int? _newPlanId;
+    private bool _saving;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+        try
+        {
+            await LicensesApi.RenewAsync(LicenseId, _newPlanId);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

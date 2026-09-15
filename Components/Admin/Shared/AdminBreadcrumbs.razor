@@ -1,0 +1,60 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+@if (_items.Count > 1)
+{
+    <MudBreadcrumbs Items="_items" Class="px-0 pt-0 mb-2" />
+}
+
+@code {
+    private static readonly Dictionary<string, string> Labels = new()
+    {
+        ["admin"] = "الرئيسية",
+        ["clients"] = "العملاء",
+        ["plans"] = "الباقات",
+        ["licenses"] = "التراخيص",
+        ["activations"] = "التفعيلات",
+        ["shift-email"] = "بريد ملخص الوردية",
+        ["settings"] = "الإعدادات",
+        ["profile"] = "الملف الشخصي",
+    };
+
+    private List<BreadcrumbItem> _items = new();
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        Build();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => Build();
+
+    private void Build()
+    {
+        var relative = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].Trim('/');
+        var segments = relative.Length == 0 ? Array.Empty<string>() : relative.Split('/');
+
+        var items = new List<BreadcrumbItem>
+        {
+            new("الرئيسية", "/admin", icon: Icons.Material.Filled.Home)
+        };
+
+        var path = "";
+        foreach (var segment in segments)
+        {
+            path += "/" + segment;
+            if (segment == "admin") continue;
+
+            var label = Labels.TryGetValue(segment, out var known) ? known : (int.TryParse(segment, out _) ? $"#{segment}" : segment);
+            items.Add(new BreadcrumbItem(label, path));
+        }
+
+        if (items.Count > 0)
+            items[^1] = new BreadcrumbItem(items[^1].Text, href: null, disabled: true);
+
+        _items = items;
+        StateHasChanged();
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

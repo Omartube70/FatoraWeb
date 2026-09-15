@@ -1,0 +1,142 @@
+@page "/admin"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject ClientsService ClientsApi
+@inject PlansService PlansApi
+@inject LicensesService LicensesApi
+
+<PageTitle>الرئيسية - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">نظرة عامة</MudText>
+
+@if (_loading)
+{
+    <MudGrid>
+        @for (var i = 0; i < 4; i++)
+        {
+            <MudItem xs="12" sm="6" md="3"><MudSkeleton Height="110px" /></MudItem>
+        }
+    </MudGrid>
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل بيانات الداشبورد. حاول تحديث الصفحة.</MudAlert>
+}
+else
+{
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="إجمالي العملاء" Value="@_clients.Count.ToString()" Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="عملاء نشطون" Value="@_clients.Count(c => c.Status == "Active").ToString()" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="عملاء محظورون" Value="@_clients.Count(c => c.Status == "Blocked").ToString()" Icon="@Icons.Material.Filled.Block" Color="Color.Error" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="إجمالي الباقات" Value="@_plans.Count.ToString()" Icon="@Icons.Material.Filled.CardMembership" Color="Color.Info" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="إجمالي التراخيص" Value="@_licenses.Count.ToString()" Icon="@Icons.Material.Filled.VpnKey" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="تراخيص نشطة" Value="@_licenses.Count(l => l.Status == "Active").ToString()" Icon="@Icons.Material.Filled.Verified" Color="Color.Success" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="تراخيص موقوفة/ملغاة" Value="@_licenses.Count(l => l.Status is "Suspended" or "Revoked").ToString()" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="تراخيص منتهية" Value="@_licenses.Count(l => l.Status == "Expired").ToString()" Icon="@Icons.Material.Filled.EventBusy" Color="Color.Error" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-3">توزيع حالة التراخيص</MudText>
+                @if (_licenses.Count == 0)
+                {
+                    <MudText Color="Color.Secondary">لا توجد بيانات لعرضها</MudText>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@_licenseStatusSeries" ChartLabels="@_licenseStatusLabels" Width="100%" Height="280px" />
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-3">توزيع التراخيص حسب الباقة</MudText>
+                @if (_licenses.Count == 0 || _plans.Count == 0)
+                {
+                    <MudText Color="Color.Secondary">لا توجد بيانات لعرضها</MudText>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="@_planSeries" ChartLabels="@_planLabels" Width="100%" Height="280px" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private List<ClientDto> _clients = new();
+    private List<PlanDto> _plans = new();
+    private List<LicenseDto> _licenses = new();
+
+    private List<ChartSeries<double>> _licenseStatusSeries = new();
+    private string[] _licenseStatusLabels = Array.Empty<string>();
+    private List<ChartSeries<double>> _planSeries = new();
+    private string[] _planLabels = Array.Empty<string>();
+
+    private bool _loading = true;
+    private bool _loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var clientsTask = ClientsApi.GetAllAsync();
+            var plansTask = PlansApi.GetAllAsync();
+            var licensesTask = LicensesApi.GetAllAsync();
+            await Task.WhenAll(clientsTask, plansTask, licensesTask);
+
+            _clients = clientsTask.Result;
+            _plans = plansTask.Result;
+            _licenses = licensesTask.Result;
+
+            BuildCharts();
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void BuildCharts()
+    {
+        var statusGroups = _licenses.GroupBy(l => l.Status).OrderByDescending(g => g.Count()).ToList();
+        _licenseStatusLabels = statusGroups.Select(g => g.Key).ToArray();
+        _licenseStatusSeries = new List<ChartSeries<double>>
+        {
+            new() { Name = "التراخيص", Data = statusGroups.Select(g => (double)g.Count()).ToArray() }
+        };
+
+        var planCounts = _plans
+            .Select(p => new { p.Name, Count = _licenses.Count(l => l.PlanId == p.PlanId) })
+            .ToList();
+        _planLabels = planCounts.Select(p => p.Name).ToArray();
+        _planSeries = new List<ChartSeries<double>>
+        {
+            new() { Name = "عدد التراخيص", Data = planCounts.Select(p => (double)p.Count).ToArray() }
+        };
+    }
+}

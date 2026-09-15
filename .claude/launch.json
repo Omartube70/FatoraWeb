@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fatora-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Fatora.csproj"],
+      "port": 5117
+    }
+  ]
+}

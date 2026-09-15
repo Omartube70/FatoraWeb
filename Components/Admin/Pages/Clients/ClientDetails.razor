@@ -1,0 +1,112 @@
+@page "/admin/clients/{ClientId:int}"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject ClientsService ClientsApi
+@inject LicensesService LicensesApi
+@inject PlansService PlansApi
+@inject DateService DateFmt
+
+<PageTitle>تفاصيل العميل - لوحة الإدارة</PageTitle>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_client is null)
+{
+    <MudAlert Severity="Severity.Error">تعذر العثور على العميل.</MudAlert>
+}
+else
+{
+    <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+        <MudText Typo="Typo.h5">@_client.BusinessName</MudText>
+        <StatusBadge Status="@_client.Status" />
+    </div>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">بيانات العميل</MudText>
+                <MudText><b>الاسم:</b> @_client.ClientName</MudText>
+                <MudText><b>النشاط التجاري:</b> @_client.BusinessName</MudText>
+                <MudText><b>تاريخ الإنشاء:</b> @DateFmt.FormatDate(_client.CreatedAt)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">بيانات التواصل</MudText>
+                <MudText><b>الهاتف:</b> @_client.Phone</MudText>
+                <MudText><b>البريد الإلكتروني:</b> @_client.Email</MudText>
+                <MudText><b>العنوان:</b> @(string.IsNullOrWhiteSpace(_client.Address) ? "—" : _client.Address)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">ملاحظات</MudText>
+                <MudText>@(string.IsNullOrWhiteSpace(_client.Notes) ? "لا يوجد" : _client.Notes)</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h6" Class="mb-2">التراخيص</MudText>
+    @if (_licenses.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">لا يوجد تراخيص لهذا العميل</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@_licenses" Dense="true" Hover="true" Class="mb-6">
+            <HeaderContent>
+                <MudTh>المفتاح</MudTh>
+                <MudTh>الباقة</MudTh>
+                <MudTh>الحالة</MudTh>
+                <MudTh>تاريخ الانتهاء</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="المفتاح">@context.LicenseKey</MudTd>
+                <MudTd DataLabel="الباقة">@GetPlanName(context.PlanId)</MudTd>
+                <MudTd DataLabel="الحالة"><StatusBadge Status="@context.Status" /></MudTd>
+                <MudTd DataLabel="تاريخ الانتهاء">@DateFmt.FormatDate(context.ExpiryDate)</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Href="@($"/admin/licenses/{context.LicenseId}")" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    [Parameter] public int ClientId { get; set; }
+
+    private ClientDto? _client;
+    private List<LicenseDto> _licenses = new();
+    private List<PlanDto> _plans = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var clientTask = ClientsApi.GetByIdAsync(ClientId);
+            var licensesTask = LicensesApi.GetAllAsync();
+            var plansTask = PlansApi.GetAllAsync();
+            await Task.WhenAll(clientTask, licensesTask, plansTask);
+
+            _client = clientTask.Result;
+            _plans = plansTask.Result;
+            _licenses = licensesTask.Result.Where(l => l.ClientId == ClientId).ToList();
+        }
+        catch (ApiException)
+        {
+            _client = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetPlanName(int planId) => _plans.FirstOrDefault(p => p.PlanId == planId)?.Name ?? $"#{planId}";
+}

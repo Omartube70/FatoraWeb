@@ -1,0 +1,42 @@
+@page "/admin/profile"
+@layout AdminLayout
+@attribute [Authorize]
+@inject CurrentAdminService CurrentAdmin
+
+<PageTitle>الملف الشخصي - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">الملف الشخصي</MudText>
+
+<MudPaper Class="pa-6" Elevation="1" Style="max-width: 480px;">
+    <div class="d-flex align-center gap-3 mb-4">
+        <MudAvatar Color="Color.Primary" Size="Size.Large">
+            <MudIcon Icon="@Icons.Material.Filled.Person" />
+        </MudAvatar>
+        <div>
+            <MudText Typo="Typo.h6">@_username</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_email</MudText>
+        </div>
+    </div>
+
+    <MudAlert Severity="Severity.Info" Dense="true">
+        بيانات الحساب معروضة من داخل رمز الدخول (JWT) مباشرة. لا يوجد endpoint لتعديل الملف الشخصي أو تغيير كلمة المرور حاليًا.
+    </MudAlert>
+
+    <form method="post" action="/admin/account/logout" class="mt-4">
+        <AntiforgeryToken />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout">
+            تسجيل الخروج
+        </MudButton>
+    </form>
+</MudPaper>
+
+@code {
+    private string _username = "";
+    private string _email = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _username = await CurrentAdmin.GetUsernameAsync() ?? "—";
+        _email = await CurrentAdmin.GetEmailAsync() ?? "—";
+    }
+}

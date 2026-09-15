@@ -1,0 +1,29 @@
+<MudChip T="string" Color="@GetColor()" Size="Size.Small" Variant="Variant.Filled">@GetLabel()</MudChip>
+
+@code {
+    [Parameter, EditorRequired] public string Status { get; set; } = string.Empty;
+
+    private Color GetColor() => Status switch
+    {
+        "Active" => Color.Success,
+        "Pending" => Color.Info,
+        "Inactive" => Color.Default,
+        "Expired" => Color.Warning,
+        "Suspended" => Color.Warning,
+        "Blocked" => Color.Error,
+        "Revoked" => Color.Error,
+        _ => Color.Default
+    };
+
+    private string GetLabel() => Status switch
+    {
+        "Active" => "نشط",
+        "Pending" => "قيد الانتظار",
+        "Inactive" => "غير نشط",
+        "Expired" => "منتهي",
+        "Suspended" => "موقوف",
+        "Blocked" => "محظور",
+        "Revoked" => "ملغي",
+        _ => Status
+    };
+}

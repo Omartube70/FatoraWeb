@@ -1,0 +1,84 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">ترخيص جديد</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="_model" @ref="_form">
+            <MudSelect T="int?" @bind-Value="_model.ClientId" Label="العميل" Variant="Variant.Outlined" Class="mb-3"
+                       Required="true" RequiredError="اختر العميل">
+                @foreach (var client in Clients)
+                {
+                    <MudSelectItem T="int?" Value="@client.ClientId">@client.BusinessName (@client.ClientName)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="int?" @bind-Value="_model.PlanId" Label="الباقة" Variant="Variant.Outlined" Class="mb-3"
+                       Required="true" RequiredError="اختر الباقة">
+                @foreach (var plan in Plans.Where(p => p.IsActive))
+                {
+                    <MudSelectItem T="int?" Value="@plan.PlanId">@plan.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudDatePicker @bind-Date="_startDate" Label="تاريخ البدء (اختياري)" Variant="Variant.Outlined" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">إلغاء</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            إنشاء
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private LicensesService LicensesApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] public List<ClientDto> Clients { get; set; } = new();
+    [Parameter] public List<PlanDto> Plans { get; set; } = new();
+
+    private MudForm _form = default!;
+    private bool _saving;
+    private DateTime? _startDate;
+
+    private class FormModel
+    {
+        public int? ClientId { get; set; }
+        public int? PlanId { get; set; }
+    }
+
+    private FormModel _model = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid || _saving) return;
+
+        _saving = true;
+        try
+        {
+            await LicensesApi.CreateAsync(new CreateLicenseRequest
+            {
+                ClientId = _model.ClientId!.Value,
+                PlanId = _model.PlanId!.Value,
+                StartDate = _startDate
+            });
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

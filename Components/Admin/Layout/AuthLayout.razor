@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@ThemeProvider.GetFatoraTheme()" IsDarkMode="false" DefaultScrollbar="false" />
+<MudPopoverProvider />
+<MudSnackbarProvider />
+
+<div class="admin-auth-shell" dir="rtl">
+    <div class="admin-auth-card">
+        <div class="admin-auth-brand">
+            <img src="/images/Icon.ico" alt="Fatora" />
+            <span>Fatora POS</span>
+        </div>
+        @Body
+    </div>
+</div>

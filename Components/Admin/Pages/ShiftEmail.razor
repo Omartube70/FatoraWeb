@@ -1,0 +1,55 @@
+@page "/admin/shift-email"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject EmailService EmailApi
+
+<PageTitle>بريد ملخص الوردية - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">بريد ملخص الوردية</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    إرسال بريد إلكتروني تجريبي لملخص وردية باستخدام API الإرسال الحالي. لا يوجد سجل لرسائل سابقة لأن الـ API لا يوفر ذلك.
+</MudText>
+
+<MudPaper Class="pa-4" Elevation="1" Style="max-width: 640px;">
+    <MudForm Model="_model" @ref="_form">
+        <MudTextField @bind-Value="_model.RecipientEmail" Label="البريد الإلكتروني للمستلم" Variant="Variant.Outlined" Class="mb-3"
+                      Required="true" RequiredError="البريد الإلكتروني مطلوب" />
+        <MudTextField @bind-Value="_model.Subject" Label="الموضوع" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="_model.HtmlBody" Label="محتوى الرسالة (HTML)" Variant="Variant.Outlined" Lines="6" Class="mb-3" Required="true" />
+    </MudForm>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SendAsync" Disabled="IsBusy" StartIcon="@Icons.Material.Filled.Send">
+        @if (IsBusy)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+        }
+        إرسال
+    </MudButton>
+</MudPaper>
+
+@code {
+    private MudForm _form = default!;
+
+    private class FormModel
+    {
+        public string RecipientEmail { get; set; } = string.Empty;
+        public string Subject { get; set; } = "Shift Summary - End of Day";
+        public string HtmlBody { get; set; } = "<h1>Shift Summary</h1><p>Here is your shift summary report.</p>";
+    }
+
+    private FormModel _model = new();
+
+    private async Task SendAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        await RunAsync(() => EmailApi.SendShiftSummaryAsync(new ShiftSummaryRequest
+        {
+            RecipientEmail = _model.RecipientEmail,
+            Subject = _model.Subject,
+            HtmlBody = _model.HtmlBody,
+            Attachments = new()
+        }), successMessage: "تم إرسال البريد بنجاح");
+    }
+}

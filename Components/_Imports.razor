@@ -1,5 +1,7 @@
 ﻿@using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -8,6 +10,12 @@
 @using Microsoft.JSInterop
 @using Fatora
 @using Fatora.Components
+@using Fatora.Components.Admin.Layout
+@using Fatora.Components.Admin.Shared
 @using Fatora.Components.Layout
 @using Fatora.Components.Shared
+@using Fatora.Models.Api
+@using Fatora.Services.Api
+@using Fatora.Services.Auth
+@using Fatora.Services.Formatting
 @using MudBlazor

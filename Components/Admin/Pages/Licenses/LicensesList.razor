@@ -1,0 +1,195 @@
+@page "/admin/licenses"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject LicensesService LicensesApi
+@inject ClientsService ClientsApi
+@inject PlansService PlansApi
+@inject IDialogService DialogService
+@inject DateService DateFmt
+
+<PageTitle>التراخيص - لوحة الإدارة</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+    <MudText Typo="Typo.h5">التراخيص</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+        ترخيص جديد
+    </MudButton>
+</div>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل قائمة التراخيص.</MudAlert>
+}
+else if (_licenses.Count == 0)
+{
+    <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0" Outlined="true">
+        <MudIcon Icon="@Icons.Material.Filled.VpnKeyOff" Style="font-size: 48px;" Color="Color.Secondary" Class="mb-2" />
+        <MudText Color="Color.Secondary">لا يوجد تراخيص بعد</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudDataGrid Items="@_licenses" Filterable="true" SortMode="SortMode.Multiple" QuickFilter="@QuickFilter" Elevation="1">
+        <ToolBarContent>
+            <MudTextField T="string" ValueChanged="@(s => _searchText = s)" Placeholder="بحث..." Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.LicenseKey" Title="المفتاح" />
+            <TemplateColumn Title="العميل" Sortable="false">
+                <CellTemplate>@GetClientName(context.Item.ClientId)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="الباقة" Sortable="false">
+                <CellTemplate>@GetPlanName(context.Item.PlanId)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="تاريخ الانتهاء">
+                <CellTemplate>@DateFmt.FormatDate(context.Item.ExpiryDate)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="الحالة" Sortable="false">
+                <CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.MaxDevices" Title="أقصى عدد أجهزة" />
+            <TemplateColumn Title="الإجراءات" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Href="@($"/admin/licenses/{context.Item.LicenseId}")" title="عرض" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditDialog(context.Item))" title="تعديل" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" Color="Color.Info" OnClick="@(() => OpenRenewDialog(context.Item))" title="تجديد" />
+                        @if (context.Item.Status != "Suspended")
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Size="Size.Small" Color="Color.Warning" OnClick="@(() => SuspendAsync(context.Item))" title="إيقاف" />
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" OnClick="@(() => RevokeAsync(context.Item))" title="إلغاء" />
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LicenseDto" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private List<LicenseDto> _licenses = new();
+    private List<ClientDto> _clients = new();
+    private List<PlanDto> _plans = new();
+    private bool _loading = true;
+    private bool _loadFailed;
+    private string _searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var licensesTask = LicensesApi.GetAllAsync();
+            var clientsTask = ClientsApi.GetAllAsync();
+            var plansTask = PlansApi.GetAllAsync();
+            await Task.WhenAll(licensesTask, clientsTask, plansTask);
+
+            _licenses = licensesTask.Result;
+            _clients = clientsTask.Result;
+            _plans = plansTask.Result;
+            _loadFailed = false;
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetClientName(int clientId) => _clients.FirstOrDefault(c => c.ClientId == clientId)?.BusinessName ?? $"#{clientId}";
+    private string GetPlanName(int planId) => _plans.FirstOrDefault(p => p.PlanId == planId)?.Name ?? $"#{planId}";
+
+    private bool QuickFilter(LicenseDto l)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return true;
+        return l.LicenseKey.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || GetClientName(l.ClientId).Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters<LicenseCreateDialog>
+        {
+            { x => x.Clients, _clients },
+            { x => x.Plans, _plans }
+        };
+        var dialog = await DialogService.ShowAsync<LicenseCreateDialog>("ترخيص جديد", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task OpenEditDialog(LicenseDto license)
+    {
+        var parameters = new DialogParameters<LicenseEditDialog>
+        {
+            { x => x.Existing, license },
+            { x => x.Plans, _plans }
+        };
+        var dialog = await DialogService.ShowAsync<LicenseEditDialog>("تعديل الترخيص", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task OpenRenewDialog(LicenseDto license)
+    {
+        var parameters = new DialogParameters<RenewLicenseDialog>
+        {
+            { x => x.LicenseId, license.LicenseId },
+            { x => x.Plans, _plans }
+        };
+        var dialog = await DialogService.ShowAsync<RenewLicenseDialog>("تجديد الترخيص", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            Snackbar.Add("تم تجديد الترخيص", Severity.Success);
+            await LoadAsync();
+        }
+    }
+
+    private async Task SuspendAsync(LicenseDto license)
+    {
+        var confirmed = await ConfirmAsync("إيقاف الترخيص", $"هل أنت متأكد من إيقاف الترخيص \"{license.LicenseKey}\"؟", Color.Warning);
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => LicensesApi.SuspendAsync(license.LicenseId), successMessage: "تم إيقاف الترخيص");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task RevokeAsync(LicenseDto license)
+    {
+        var confirmed = await ConfirmAsync("إلغاء الترخيص", $"هل أنت متأكد من إلغاء الترخيص \"{license.LicenseKey}\"؟ هذا الإجراء لا يمكن التراجع عنه.");
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => LicensesApi.RevokeAsync(license.LicenseId), successMessage: "تم إلغاء الترخيص");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

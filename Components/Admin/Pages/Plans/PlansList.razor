@@ -1,0 +1,140 @@
+@page "/admin/plans"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject PlansService PlansApi
+@inject IDialogService DialogService
+@inject CurrencyService CurrencyFmt
+
+<PageTitle>الباقات - لوحة الإدارة</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+    <MudText Typo="Typo.h5">الباقات</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+        باقة جديدة
+    </MudButton>
+</div>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل قائمة الباقات.</MudAlert>
+}
+else if (_plans.Count == 0)
+{
+    <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0" Outlined="true">
+        <MudIcon Icon="@Icons.Material.Filled.CardMembership" Style="font-size: 48px;" Color="Color.Secondary" Class="mb-2" />
+        <MudText Color="Color.Secondary">لا يوجد باقات بعد</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid>
+        @foreach (var plan in _plans)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudPaper Class="pa-4 d-flex flex-column" Elevation="1" Style="height:100%;">
+                    <div class="d-flex justify-space-between align-center mb-2">
+                        <MudText Typo="Typo.h6">@plan.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="@(plan.IsActive ? Color.Success : Color.Default)">
+                            @(plan.IsActive ? "مفعّلة" : "غير مفعّلة")
+                        </MudChip>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">@(plan.Description ?? "—")</MudText>
+                    <MudText Typo="Typo.h5" Class="mb-2">@CurrencyFmt.Format(plan.Price)</MudText>
+                    <MudText Typo="Typo.body2"><MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" /> @plan.DurationDays يوم</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4"><MudIcon Icon="@Icons.Material.Filled.Devices" Size="Size.Small" /> @plan.MaxDevices جهاز</MudText>
+                    <MudSpacer />
+                    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditDialog(plan))" title="تعديل" />
+                        @if (plan.IsActive)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.ToggleOff" Size="Size.Small" Color="Color.Warning" OnClick="@(() => DeactivateAsync(plan))" title="تعطيل" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.ToggleOn" Size="Size.Small" Color="Color.Success" OnClick="@(() => ActivateAsync(plan))" title="تفعيل" />
+                        }
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<PlanDto> _plans = new();
+    private bool _loading = true;
+    private bool _loadFailed;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _plans = await PlansApi.GetAllAsync();
+            _loadFailed = false;
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<PlanFormDialog>("باقة جديدة");
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task OpenEditDialog(PlanDto plan)
+    {
+        var parameters = new DialogParameters<PlanFormDialog> { { x => x.Existing, plan } };
+        var dialog = await DialogService.ShowAsync<PlanFormDialog>("تعديل الباقة", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task DeactivateAsync(PlanDto plan)
+    {
+        var confirmed = await ConfirmAsync("تعطيل الباقة", $"هل أنت متأكد من تعطيل باقة \"{plan.Name}\"؟", Color.Warning);
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => PlansApi.DeactivateAsync(plan.PlanId), successMessage: "تم تعطيل الباقة");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task ActivateAsync(PlanDto plan)
+    {
+        var confirmed = await ConfirmAsync("تفعيل الباقة", $"هل أنت متأكد من تفعيل باقة \"{plan.Name}\"؟", Color.Success);
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => PlansApi.ActivateAsync(plan.PlanId), successMessage: "تم تفعيل الباقة");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

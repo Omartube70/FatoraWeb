@@ -1,0 +1,155 @@
+@page "/admin/clients"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject ClientsService ClientsApi
+@inject IDialogService DialogService
+
+<PageTitle>العملاء - لوحة الإدارة</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+    <MudText Typo="Typo.h5">العملاء</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+        عميل جديد
+    </MudButton>
+</div>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل قائمة العملاء.</MudAlert>
+}
+else if (_clients.Count == 0)
+{
+    <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0" Outlined="true">
+        <MudIcon Icon="@Icons.Material.Filled.PeopleOutline" Style="font-size: 48px;" Color="Color.Secondary" Class="mb-2" />
+        <MudText Color="Color.Secondary">لا يوجد عملاء بعد</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudDataGrid Items="@_clients" Filterable="true" SortMode="SortMode.Multiple" QuickFilter="@QuickFilter"
+                 Hideable="true" Groupable="false" Elevation="1">
+        <ToolBarContent>
+            <MudTextField T="string" ValueChanged="@(s => _searchText = s)" Placeholder="بحث..." Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.ClientName" Title="اسم العميل" />
+            <PropertyColumn Property="x => x.BusinessName" Title="النشاط التجاري" />
+            <PropertyColumn Property="x => x.Phone" Title="الهاتف" />
+            <PropertyColumn Property="x => x.Email" Title="البريد الإلكتروني" />
+            <TemplateColumn Title="الحالة" Sortable="false">
+                <CellTemplate>
+                    <StatusBadge Status="@context.Item.Status" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="الإجراءات" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Href="@($"/admin/clients/{context.Item.ClientId}")" title="عرض" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OpenEditDialog(context.Item))" title="تعديل" />
+                        @if (context.Item.Status == "Blocked")
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Color="Color.Success" OnClick="@(() => UnblockAsync(context.Item))" title="إلغاء الحظر" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Block" Size="Size.Small" Color="Color.Error" OnClick="@(() => BlockAsync(context.Item))" title="حظر" />
+                        }
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="ClientDto" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private List<ClientDto> _clients = new();
+    private bool _loading = true;
+    private bool _loadFailed;
+    private string _searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _clients = await ClientsApi.GetAllAsync();
+            _loadFailed = false;
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool QuickFilter(ClientDto c)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return true;
+        return c.ClientName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || c.BusinessName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || c.Phone.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || c.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<ClientFormDialog>("عميل جديد");
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task OpenEditDialog(ClientDto client)
+    {
+        var parameters = new DialogParameters<ClientFormDialog> { { x => x.Existing, client } };
+        var dialog = await DialogService.ShowAsync<ClientFormDialog>("تعديل بيانات العميل", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAsync();
+    }
+
+    private async Task BlockAsync(ClientDto client)
+    {
+        var confirmed = await ConfirmAsync("حظر العميل", $"هل أنت متأكد من حظر العميل \"{client.BusinessName}\"؟");
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => ClientsApi.BlockAsync(client.ClientId), successMessage: "تم حظر العميل");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task UnblockAsync(ClientDto client)
+    {
+        var confirmed = await ConfirmAsync("إلغاء حظر العميل", $"هل أنت متأكد من إلغاء حظر العميل \"{client.BusinessName}\"؟", Color.Success);
+        if (!confirmed) return;
+
+        var ok = await RunAsync(() => ClientsApi.UnblockAsync(client.ClientId), successMessage: "تم إلغاء حظر العميل");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

@@ -1,0 +1,11 @@
+@page "/admin/access-denied"
+@layout AuthLayout
+
+<PageTitle>لا يوجد صلاحية - Fatora POS</PageTitle>
+
+<MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Style="font-size: 48px;" Class="d-flex mx-auto mb-3" />
+<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-2">لا تملك صلاحية الوصول</MudText>
+<MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary" Class="mb-6">
+    حسابك لا يملك الصلاحية اللازمة لعرض هذه الصفحة.
+</MudText>
+<MudButton Href="/admin" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">العودة للرئيسية</MudButton>

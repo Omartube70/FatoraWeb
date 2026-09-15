@@ -1,0 +1,206 @@
+@page "/admin/licenses/{LicenseId:int}"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject LicensesService LicensesApi
+@inject ActivationsService ActivationsApi
+@inject ClientsService ClientsApi
+@inject PlansService PlansApi
+@inject IDialogService DialogService
+@inject DateService DateFmt
+
+<PageTitle>تفاصيل الترخيص - لوحة الإدارة</PageTitle>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_license is null)
+{
+    <MudAlert Severity="Severity.Error">تعذر العثور على الترخيص.</MudAlert>
+}
+else
+{
+    <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+        <MudText Typo="Typo.h5">@_license.LicenseKey</MudText>
+        <StatusBadge Status="@_license.Status" />
+    </div>
+
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">بيانات الترخيص</MudText>
+                <MudText><b>المفتاح:</b> @_license.LicenseKey</MudText>
+                <MudText><b>النوع:</b> @_license.Type</MudText>
+                <MudText><b>أقصى عدد أجهزة:</b> @_license.MaxDevices</MudText>
+                <MudText><b>تاريخ الإنشاء:</b> @DateFmt.FormatDate(_license.CreatedAt)</MudText>
+                <MudText><b>آخر تحقق:</b> @DateFmt.FormatDateTime(_license.LastValidationAt)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">العميل والباقة</MudText>
+                @if (_client is not null)
+                {
+                    <MudText>
+                        <b>العميل:</b>
+                        <MudLink Href="@($"/admin/clients/{_client.ClientId}")">@_client.BusinessName</MudLink>
+                    </MudText>
+                }
+                <MudText><b>الباقة:</b> @(_plan?.Name ?? $"#{_license.PlanId}")</MudText>
+                <MudText><b>تاريخ البدء:</b> @DateFmt.FormatDate(_license.StartDate)</MudText>
+                <MudText><b>تاريخ الانتهاء:</b> @DateFmt.FormatDate(_license.ExpiryDate)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4 d-flex flex-column gap-2" Elevation="1">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">إجراءات</MudText>
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Autorenew" OnClick="OpenRenewDialog">تجديد</MudButton>
+                @if (_license.Status != "Suspended")
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.PauseCircle" OnClick="SuspendAsync">إيقاف</MudButton>
+                }
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="RevokeAsync">إلغاء الترخيص</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h6" Class="mb-2">التفعيلات</MudText>
+    @if (_activations.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">لا يوجد تفعيلات لهذا الترخيص</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="@_activations" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>الجهاز</MudTh>
+                <MudTh>اسم الجهاز</MudTh>
+                <MudTh>نظام التشغيل</MudTh>
+                <MudTh>إصدار التطبيق</MudTh>
+                <MudTh>الحالة</MudTh>
+                <MudTh>تاريخ التفعيل</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="الجهاز">@context.DeviceId</MudTd>
+                <MudTd DataLabel="اسم الجهاز">@context.MachineName</MudTd>
+                <MudTd DataLabel="نظام التشغيل">@context.OperatingSystem</MudTd>
+                <MudTd DataLabel="إصدار التطبيق">@context.ApplicationVersion</MudTd>
+                <MudTd DataLabel="الحالة"><StatusBadge Status="@context.Status" /></MudTd>
+                <MudTd DataLabel="تاريخ التفعيل">@DateFmt.FormatDateTime(context.ActivatedAt)</MudTd>
+                <MudTd>
+                    <MudStack Row="true" Spacing="1">
+                        @if (context.Status != "Active")
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Replay" Size="Size.Small" Color="Color.Success"
+                                           OnClick="@(() => ReactivateDeviceAsync(context))" title="إعادة تفعيل" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Block" Size="Size.Small" Color="Color.Error"
+                                           OnClick="@(() => RevokeDeviceAsync(context))" title="إلغاء التفعيل" />
+                        }
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    [Parameter] public int LicenseId { get; set; }
+
+    private LicenseDto? _license;
+    private ClientDto? _client;
+    private PlanDto? _plan;
+    private List<ActivationDto> _activations = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _license = await LicensesApi.GetByIdAsync(LicenseId);
+            var clientTask = ClientsApi.GetByIdAsync(_license.ClientId);
+            var planTask = PlansApi.GetByIdAsync(_license.PlanId);
+            var activationsTask = LicensesApi.GetActivationsAsync(LicenseId);
+            await Task.WhenAll(clientTask, planTask, activationsTask);
+            _client = clientTask.Result;
+            _plan = planTask.Result;
+            _activations = activationsTask.Result;
+        }
+        catch (ApiException)
+        {
+            _license = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenRenewDialog()
+    {
+        var parameters = new DialogParameters<RenewLicenseDialog>
+        {
+            { x => x.LicenseId, LicenseId },
+            { x => x.Plans, _plan is null ? new List<PlanDto>() : new List<PlanDto> { _plan } }
+        };
+        var dialog = await DialogService.ShowAsync<RenewLicenseDialog>("تجديد الترخيص", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            Snackbar.Add("تم تجديد الترخيص", Severity.Success);
+            await LoadAsync();
+        }
+    }
+
+    private async Task SuspendAsync()
+    {
+        var confirmed = await ConfirmAsync("إيقاف الترخيص", "هل أنت متأكد من إيقاف هذا الترخيص؟", Color.Warning);
+        if (!confirmed) return;
+        var ok = await RunAsync(() => LicensesApi.SuspendAsync(LicenseId), successMessage: "تم إيقاف الترخيص");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task RevokeAsync()
+    {
+        var confirmed = await ConfirmAsync("إلغاء الترخيص", "هل أنت متأكد من إلغاء هذا الترخيص؟ هذا الإجراء لا يمكن التراجع عنه.");
+        if (!confirmed) return;
+        var ok = await RunAsync(() => LicensesApi.RevokeAsync(LicenseId), successMessage: "تم إلغاء الترخيص");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task ReactivateDeviceAsync(ActivationDto activation)
+    {
+        var confirmed = await ConfirmAsync("إعادة تفعيل الجهاز", $"هل تريد إعادة تفعيل الجهاز \"{activation.MachineName}\"؟", Color.Success);
+        if (!confirmed) return;
+        var ok = await RunAsync(() => ActivationsApi.ReactivateAsync(activation.ActivationId), successMessage: "تم إعادة تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task RevokeDeviceAsync(ActivationDto activation)
+    {
+        var confirmed = await ConfirmAsync("إلغاء تفعيل الجهاز", $"هل تريد إلغاء تفعيل الجهاز \"{activation.MachineName}\"؟");
+        if (!confirmed) return;
+        var ok = await RunAsync(() => ActivationsApi.RevokeAsync(activation.ActivationId), successMessage: "تم إلغاء تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

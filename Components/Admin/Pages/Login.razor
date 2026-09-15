@@ -1,0 +1,40 @@
+@page "/admin/login"
+@layout AuthLayout
+@rendermode InteractiveServer
+
+<PageTitle>تسجيل الدخول - Fatora POS</PageTitle>
+
+<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-1">تسجيل الدخول للوحة الإدارة</MudText>
+<MudText Typo="Typo.body2" Align="Align.Center" Class="mb-6" Color="Color.Secondary">أدخل بيانات حسابك للمتابعة</MudText>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@ErrorMessage</MudAlert>
+}
+
+<form method="post" action="/admin/account/login">
+    <AntiforgeryToken />
+    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+    <MudTextField T="string" Name="username" autofocus Label="اسم المستخدم" Variant="Variant.Outlined"
+                   FullWidth="true" Class="mb-4" Required="true" />
+
+    <MudTextField T="string" Name="password" Label="كلمة المرور" Variant="Variant.Outlined"
+                   InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                   FullWidth="true" Class="mb-2" Required="true"
+                   Adornment="Adornment.End"
+                   AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                   OnAdornmentClick="@(() => _showPassword = !_showPassword)" />
+
+    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+               FullWidth="true" Size="Size.Large" Class="mt-4">
+        تسجيل الدخول
+    </MudButton>
+</form>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")] private string? ErrorMessage { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
+
+    private bool _showPassword;
+}

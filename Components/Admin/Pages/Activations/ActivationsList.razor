@@ -1,0 +1,162 @@
+@page "/admin/activations"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject LicensesService LicensesApi
+@inject ActivationsService ActivationsApi
+@inject ClientsService ClientsApi
+@inject IDialogService DialogService
+@inject DateService DateFmt
+
+<PageTitle>التفعيلات - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">التفعيلات</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    قائمة مجمّعة من كل تفعيلات الأجهزة عبر كل التراخيص (لا يوجد endpoint واحد لكل التفعيلات، لذلك يتم التجميع من كل ترخيص على حدة).
+</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل قائمة التفعيلات.</MudAlert>
+}
+else if (_rows.Count == 0)
+{
+    <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0" Outlined="true">
+        <MudIcon Icon="@Icons.Material.Filled.DevicesOther" Style="font-size: 48px;" Color="Color.Secondary" Class="mb-2" />
+        <MudText Color="Color.Secondary">لا يوجد تفعيلات بعد</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudDataGrid Items="@_rows" Filterable="true" SortMode="SortMode.Multiple" QuickFilter="@QuickFilter" Elevation="1">
+        <ToolBarContent>
+            <MudTextField T="string" ValueChanged="@(s => _searchText = s)" Placeholder="بحث..." Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.ClientName" Title="العميل" />
+            <PropertyColumn Property="x => x.LicenseKey" Title="الترخيص" />
+            <PropertyColumn Property="x => x.Activation.MachineName" Title="اسم الجهاز" />
+            <PropertyColumn Property="x => x.Activation.OperatingSystem" Title="نظام التشغيل" />
+            <PropertyColumn Property="x => x.Activation.ApplicationVersion" Title="إصدار التطبيق" />
+            <TemplateColumn Title="الحالة" Sortable="false">
+                <CellTemplate><StatusBadge Status="@context.Item.Activation.Status" /></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="تاريخ التفعيل">
+                <CellTemplate>@DateFmt.FormatDateTime(context.Item.Activation.ActivatedAt)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="الإجراءات" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    @if (context.Item.Activation.Status != "Active")
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Replay" Size="Size.Small" Color="Color.Success"
+                                       OnClick="@(() => ReactivateAsync(context.Item))" title="إعادة تفعيل" />
+                    }
+                    else
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Block" Size="Size.Small" Color="Color.Error"
+                                       OnClick="@(() => RevokeAsync(context.Item))" title="إلغاء التفعيل" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="ActivationRow" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private class ActivationRow
+    {
+        public ActivationDto Activation { get; set; } = default!;
+        public string ClientName { get; set; } = string.Empty;
+        public string LicenseKey { get; set; } = string.Empty;
+    }
+
+    private List<ActivationRow> _rows = new();
+    private bool _loading = true;
+    private bool _loadFailed;
+    private string _searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var licensesTask = LicensesApi.GetAllAsync();
+            var clientsTask = ClientsApi.GetAllAsync();
+            await Task.WhenAll(licensesTask, clientsTask);
+
+            var licenses = licensesTask.Result;
+            var clients = clientsTask.Result;
+
+            var activationLists = await Task.WhenAll(licenses.Select(l => LicensesApi.GetActivationsAsync(l.LicenseId)));
+
+            var rows = new List<ActivationRow>();
+            for (var i = 0; i < licenses.Count; i++)
+            {
+                var license = licenses[i];
+                var clientName = clients.FirstOrDefault(c => c.ClientId == license.ClientId)?.BusinessName ?? $"#{license.ClientId}";
+                foreach (var activation in activationLists[i])
+                {
+                    rows.Add(new ActivationRow { Activation = activation, ClientName = clientName, LicenseKey = license.LicenseKey });
+                }
+            }
+
+            _rows = rows;
+            _loadFailed = false;
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool QuickFilter(ActivationRow r)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return true;
+        return r.ClientName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || r.LicenseKey.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || r.Activation.MachineName.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task ReactivateAsync(ActivationRow row)
+    {
+        var confirmed = await ConfirmAsync("إعادة تفعيل الجهاز", $"هل تريد إعادة تفعيل الجهاز \"{row.Activation.MachineName}\"؟", Color.Success);
+        if (!confirmed) return;
+        var ok = await RunAsync(() => ActivationsApi.ReactivateAsync(row.Activation.ActivationId), successMessage: "تم إعادة تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task RevokeAsync(ActivationRow row)
+    {
+        var confirmed = await ConfirmAsync("إلغاء تفعيل الجهاز", $"هل تريد إلغاء تفعيل الجهاز \"{row.Activation.MachineName}\"؟");
+        if (!confirmed) return;
+        var ok = await RunAsync(() => ActivationsApi.RevokeAsync(row.Activation.ActivationId), successMessage: "تم إلغاء تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

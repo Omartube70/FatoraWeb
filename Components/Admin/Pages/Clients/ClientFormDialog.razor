@@ -1,0 +1,125 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "تعديل بيانات العميل" : "عميل جديد")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="_model" @ref="_form">
+            <MudTextField @bind-Value="_model.ClientName" Label="اسم العميل" Variant="Variant.Outlined" Class="mb-3"
+                          Required="true" RequiredError="اسم العميل مطلوب" MaxLength="255" />
+            <MudTextField @bind-Value="_model.BusinessName" Label="اسم النشاط التجاري" Variant="Variant.Outlined" Class="mb-3"
+                          Required="true" RequiredError="اسم النشاط مطلوب" MaxLength="255" />
+            <MudTextField @bind-Value="_model.Phone" Label="رقم الهاتف" Variant="Variant.Outlined" Class="mb-3"
+                          Required="true" RequiredError="رقم الهاتف مطلوب" MaxLength="20" />
+            <MudTextField @bind-Value="_model.Email" Label="البريد الإلكتروني" Variant="Variant.Outlined" Class="mb-3"
+                          Required="true" RequiredError="البريد الإلكتروني مطلوب"
+                          Validation="@(new Func<string, string?>(ValidateEmail))" MaxLength="255" />
+            <MudTextField @bind-Value="_model.Address" Label="العنوان" Variant="Variant.Outlined" Class="mb-3" MaxLength="500" />
+            <MudTextField @bind-Value="_model.Notes" Label="ملاحظات" Variant="Variant.Outlined" Lines="2" MaxLength="1000" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">إلغاء</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync" Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            حفظ
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private ClientsService ClientsApi { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] public ClientDto? Existing { get; set; }
+
+    private bool IsEdit => Existing is not null;
+    private MudForm _form = default!;
+    private bool _saving;
+
+    private class FormModel
+    {
+        public string ClientName { get; set; } = string.Empty;
+        public string BusinessName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+    }
+
+    private FormModel _model = new();
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null)
+        {
+            _model = new FormModel
+            {
+                ClientName = Existing.ClientName,
+                BusinessName = Existing.BusinessName,
+                Phone = Existing.Phone,
+                Email = Existing.Email,
+                Address = Existing.Address,
+                Notes = Existing.Notes
+            };
+        }
+    }
+
+    private static string? ValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        return System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+            ? null
+            : "البريد الإلكتروني غير صحيح";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid || _saving) return;
+
+        _saving = true;
+        try
+        {
+            if (IsEdit)
+            {
+                await ClientsApi.UpdateAsync(Existing!.ClientId, new UpdateClientRequest
+                {
+                    ClientName = _model.ClientName,
+                    BusinessName = _model.BusinessName,
+                    Phone = _model.Phone,
+                    Email = _model.Email,
+                    Address = _model.Address,
+                    Notes = _model.Notes
+                });
+            }
+            else
+            {
+                await ClientsApi.CreateAsync(new CreateClientRequest
+                {
+                    ClientName = _model.ClientName,
+                    BusinessName = _model.BusinessName,
+                    Phone = _model.Phone,
+                    Email = _model.Email,
+                    Address = _model.Address,
+                    Notes = _model.Notes
+                });
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
