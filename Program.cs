@@ -72,6 +72,11 @@ builder.Services.AddHttpClient<EmailService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
+builder.Services.AddHttpClient<AuditLogsService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+
 builder.Services.AddScoped<CurrentAdminService>();
 builder.Services.AddSingleton<CurrencyService>();
 builder.Services.AddSingleton<DateService>();

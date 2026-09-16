@@ -1,0 +1,144 @@
+@page "/admin/activity-log"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject AuditLogsService AuditLogsApi
+@inject ClientsService ClientsApi
+@inject LicensesService LicensesApi
+@inject DateService DateFmt
+
+<PageTitle>سجل العمليات - لوحة الإدارة</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">سجل العمليات</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    آخر العمليات المسجلة في النظام (تسجيل الدخول، إنشاء/تعديل العملاء والباقات والتراخيص، تفعيل/إلغاء الأجهزة).
+</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="300px" />
+}
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error">تعذر تحميل سجل العمليات.</MudAlert>
+}
+else if (_logs.Count == 0)
+{
+    <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0" Outlined="true">
+        <MudIcon Icon="@Icons.Material.Filled.History" Style="font-size: 48px;" Color="Color.Secondary" Class="mb-2" />
+        <MudText Color="Color.Secondary">لا يوجد عمليات مسجلة بعد</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudDataGrid Items="@_logs" Filterable="true" SortMode="SortMode.Multiple" QuickFilter="@QuickFilter" Elevation="1">
+        <ToolBarContent>
+            <MudTextField T="string" ValueChanged="@(s => _searchText = s)" Placeholder="بحث..." Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+        </ToolBarContent>
+        <Columns>
+            <TemplateColumn Title="العملية" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Color="@GetActionColor(context.Item.Action)" Variant="Variant.Filled">
+                        @GetActionLabel(context.Item.Action)
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="التفاصيل" Sortable="false">
+                <CellTemplate>@context.Item.Description</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="العميل" Sortable="false">
+                <CellTemplate>@GetClientName(context.Item.ClientId)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="الترخيص" Sortable="false">
+                <CellTemplate>@GetLicenseKey(context.Item.LicenseId)</CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.IPAddress" Title="عنوان IP" />
+            <TemplateColumn Title="التاريخ والوقت">
+                <CellTemplate>@DateFmt.FormatDateTime(context.Item.CreatedAt)</CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="AuditLogDto" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private static readonly Dictionary<string, string> ActionLabels = new()
+    {
+        ["AdminLogin"] = "تسجيل دخول",
+        ["CreateClient"] = "إنشاء عميل",
+        ["UpdateClient"] = "تعديل عميل",
+        ["BlockClient"] = "حظر عميل",
+        ["UnblockClient"] = "إلغاء حظر عميل",
+        ["CreateLicense"] = "إنشاء ترخيص",
+        ["UpdateLicense"] = "تعديل ترخيص",
+        ["ActivateLicense"] = "تفعيل ترخيص",
+        ["SuspendLicense"] = "إيقاف ترخيص",
+        ["RevokeLicense"] = "إلغاء ترخيص",
+        ["RenewLicense"] = "تجديد ترخيص",
+        ["DeactivateDevice"] = "إلغاء تفعيل جهاز",
+        ["ValidateLicense"] = "تحقق من ترخيص",
+        ["ActivateDevice"] = "تفعيل جهاز",
+        ["CreatePlan"] = "إنشاء باقة",
+        ["UpdatePlan"] = "تعديل باقة",
+        ["DeactivatePlan"] = "تعطيل باقة",
+        ["ClientSelfRegister"] = "تسجيل عميل ذاتي",
+    };
+
+    private List<AuditLogDto> _logs = new();
+    private List<ClientDto> _clients = new();
+    private List<LicenseDto> _licenses = new();
+    private bool _loading = true;
+    private bool _loadFailed;
+    private string _searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var logsTask = AuditLogsApi.GetRecentAsync();
+            var clientsTask = ClientsApi.GetAllAsync();
+            var licensesTask = LicensesApi.GetAllAsync();
+            await Task.WhenAll(logsTask, clientsTask, licensesTask);
+
+            _logs = logsTask.Result;
+            _clients = clientsTask.Result;
+            _licenses = licensesTask.Result;
+        }
+        catch (ApiException)
+        {
+            _loadFailed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetActionLabel(string action) => ActionLabels.TryGetValue(action, out var label) ? label : action;
+
+    private Color GetActionColor(string action) => action switch
+    {
+        "BlockClient" or "RevokeLicense" or "DeactivateDevice" or "DeactivatePlan" => Color.Error,
+        "SuspendLicense" => Color.Warning,
+        "UnblockClient" or "ActivateLicense" or "ActivateDevice" or "CreatePlan" or "RenewLicense" => Color.Success,
+        "AdminLogin" => Color.Info,
+        _ => Color.Default
+    };
+
+    private string GetClientName(int? clientId)
+        => clientId.HasValue ? (_clients.FirstOrDefault(c => c.ClientId == clientId.Value)?.BusinessName ?? $"#{clientId}") : "—";
+
+    private string GetLicenseKey(int? licenseId)
+        => licenseId.HasValue ? (_licenses.FirstOrDefault(l => l.LicenseId == licenseId.Value)?.LicenseKey ?? $"#{licenseId}") : "—";
+
+    private bool QuickFilter(AuditLogDto log)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return true;
+        return GetActionLabel(log.Action).Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || (log.Description?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            || GetClientName(log.ClientId).Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+    }
+}
