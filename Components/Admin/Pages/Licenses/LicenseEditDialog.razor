@@ -11,7 +11,14 @@
                 }
             </MudSelect>
             <MudNumericField @bind-Value="_model.MaxDevices" Label="أقصى عدد أجهزة" Variant="Variant.Outlined" Class="mb-3" Required="true" Min="1" />
-            <MudDatePicker @bind-Date="_expiryDate" Label="تاريخ الانتهاء" Variant="Variant.Outlined" Required="true" />
+            <MudDatePicker @bind-Date="_expiryDate" Label="تاريخ الانتهاء" Variant="Variant.Outlined" Required="true" Class="mb-3" />
+
+            <MudDivider Class="my-3" />
+            <LicenseCapabilitiesEditor @bind-Platform="_platform" @bind-AllowSync="_allowSync"
+                                       @bind-CashierMode="_features.CashierMode" @bind-Allowed="_features.Allowed" />
+            <MudText Typo="Typo.caption" Class="d-block mt-2 mud-text-secondary">
+                التغيير هنا يوصل لبرنامج العميل مع أول تحقق من الترخيص — من غير ما يعيد التفعيل.
+            </MudText>
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -37,6 +44,9 @@
     private MudForm _form = default!;
     private bool _saving;
     private DateTime? _expiryDate;
+    private string _platform = "Both";
+    private bool _allowSync = true;
+    private LicenseFeatures _features = new();
 
     private class FormModel
     {
@@ -50,6 +60,9 @@
     {
         _model = new FormModel { PlanId = Existing.PlanId, MaxDevices = Existing.MaxDevices };
         _expiryDate = Existing.ExpiryDate;
+        _platform = string.IsNullOrWhiteSpace(Existing.Platform) ? "Both" : Existing.Platform;
+        _allowSync = Existing.AllowSync;
+        _features = LicenseFeatures.Parse(Existing.Features);   // an older license = everything
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -66,7 +79,10 @@
             {
                 PlanId = _model.PlanId,
                 MaxDevices = _model.MaxDevices,
-                ExpiryDate = _expiryDate.Value
+                ExpiryDate = _expiryDate.Value,
+                Platform = _platform,
+                AllowSync = _allowSync,
+                Features = _features.ToJsonOrNull()
             });
 
             MudDialog.Close(DialogResult.Ok(true));

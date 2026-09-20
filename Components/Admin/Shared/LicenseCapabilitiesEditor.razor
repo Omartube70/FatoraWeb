@@ -1,0 +1,105 @@
+@* What a key opens, whether its devices may link through the server, and which features the
+   shop gets. Shared by the create and edit dialogs. *@
+
+<MudSelect T="string" Value="Platform" ValueChanged="OnPlatformChanged" Label="نوع الترخيص" Variant="Variant.Outlined" Class="mb-3">
+    <MudSelectItem T="string" Value="@("Both")">كمبيوتر وموبايل</MudSelectItem>
+    <MudSelectItem T="string" Value="@("Desktop")">كمبيوتر فقط</MudSelectItem>
+    <MudSelectItem T="string" Value="@("Mobile")">موبايل فقط</MudSelectItem>
+</MudSelect>
+
+<MudSwitch T="bool" Value="AllowSync" ValueChanged="OnAllowSyncChanged" Color="Color.Primary" Class="mb-1"
+           Label="مسموح بالربط مع السيرفر (مزامنة الكمبيوتر والموبايل)" />
+<MudText Typo="Typo.caption" Class="d-block mb-3 mud-text-secondary">
+    لو مقفول، البرنامج يشتغل على الجهاز لوحده ومش هيقدر يتزامن مع أي جهاز تاني.
+</MudText>
+
+<MudSelect T="string" Value="CashierMode" ValueChanged="OnCashierModeChanged" Label="شاشة الكاشير" Variant="Variant.Outlined" Class="mb-3">
+    <MudSelectItem T="string" Value="@LicenseFeatures.CashierModeAny">يختار بنفسه (باركود أو لمس)</MudSelectItem>
+    <MudSelectItem T="string" Value="@LicenseFeatures.CashierModeBarcode">باركود فقط</MudSelectItem>
+    <MudSelectItem T="string" Value="@LicenseFeatures.CashierModeTouch">لمس (تاتش) فقط</MudSelectItem>
+</MudSelect>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-2">
+    <MudText Typo="Typo.subtitle2">المميزات المفتوحة للعميل</MudText>
+    <MudSpacer />
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => ApplyPreset(LicenseFeatures.RetailPreset))">محل تجزئة</MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => ApplyPreset(LicenseFeatures.RestaurantPreset))">مطعم / كافيه</MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SelectAll">الكل</MudButton>
+    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SelectNone">لا شيء</MudButton>
+</div>
+<MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
+    اللي مش متعلّم هنا هيظهر عند العميل في الإعدادات مقفول ومش هيقدر يشغّله.
+</MudText>
+
+@foreach (var group in LicenseFeatures.Catalogue)
+{
+    <MudText Typo="Typo.overline" Class="mt-2">@group.Group</MudText>
+    <div class="d-flex flex-wrap">
+        @foreach (var item in group.Items)
+        {
+            var key = item.Key;
+            <MudCheckBox T="bool" Value="@Allowed.Contains(key)" ValueChanged="@(v => Toggle(key, v))"
+                         Label="@item.Label" Color="Color.Primary" Dense="true" Class="me-3" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Platform { get; set; } = "Both";
+    [Parameter] public EventCallback<string> PlatformChanged { get; set; }
+
+    [Parameter] public bool AllowSync { get; set; } = true;
+    [Parameter] public EventCallback<bool> AllowSyncChanged { get; set; }
+
+    [Parameter] public string CashierMode { get; set; } = LicenseFeatures.CashierModeAny;
+    [Parameter] public EventCallback<string> CashierModeChanged { get; set; }
+
+    [Parameter] public List<string> Allowed { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> AllowedChanged { get; set; }
+
+    private Task OnPlatformChanged(string value)
+    {
+        Platform = value;
+        return PlatformChanged.InvokeAsync(value);
+    }
+
+    private Task OnAllowSyncChanged(bool value)
+    {
+        AllowSync = value;
+        return AllowSyncChanged.InvokeAsync(value);
+    }
+
+    private Task OnCashierModeChanged(string value)
+    {
+        CashierMode = value;
+        return CashierModeChanged.InvokeAsync(value);
+    }
+
+    private Task Toggle(string key, bool on)
+    {
+        if (on && !Allowed.Contains(key))
+            Allowed.Add(key);
+        else if (!on)
+            Allowed.Remove(key);
+
+        return AllowedChanged.InvokeAsync(Allowed);
+    }
+
+    private Task ApplyPreset(IEnumerable<string> preset)
+    {
+        Allowed = preset.ToList();
+        return AllowedChanged.InvokeAsync(Allowed);
+    }
+
+    private Task SelectAll()
+    {
+        Allowed = LicenseFeatures.AllKeys.ToList();
+        return AllowedChanged.InvokeAsync(Allowed);
+    }
+
+    private Task SelectNone()
+    {
+        Allowed = new List<string>();
+        return AllowedChanged.InvokeAsync(Allowed);
+    }
+}

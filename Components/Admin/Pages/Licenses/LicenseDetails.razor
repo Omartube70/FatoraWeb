@@ -33,6 +33,10 @@ else
                 <MudText><b>المفتاح:</b> @_license.LicenseKey</MudText>
                 <MudText><b>النوع:</b> @_license.Type</MudText>
                 <MudText><b>أقصى عدد أجهزة:</b> @_license.MaxDevices</MudText>
+                <MudText><b>يفتح على:</b> @PlatformLabel(_license.Platform)</MudText>
+                <MudText><b>الربط مع السيرفر:</b> @(_license.AllowSync ? "مسموح" : "مقفول")</MudText>
+                <MudText><b>شاشة الكاشير:</b> @CashierLabel(LicenseFeatures.Parse(_license.Features).CashierMode)</MudText>
+                <MudText><b>المميزات:</b> @FeaturesLabel(_license.Features)</MudText>
                 <MudText><b>تاريخ الإنشاء:</b> @DateFmt.FormatDate(_license.CreatedAt)</MudText>
                 <MudText><b>آخر تحقق:</b> @DateFmt.FormatDateTime(_license.LastValidationAt)</MudText>
             </MudPaper>
@@ -189,6 +193,27 @@ else
         if (!confirmed) return;
         var ok = await RunAsync(() => ActivationsApi.RevokeAsync(activation.ActivationId), successMessage: "تم إلغاء تفعيل الجهاز");
         if (ok) await LoadAsync();
+    }
+
+    private static string PlatformLabel(string? platform) => platform switch
+    {
+        "Desktop" => "كمبيوتر فقط",
+        "Mobile" => "موبايل فقط",
+        _ => "كمبيوتر وموبايل"
+    };
+
+    private static string CashierLabel(string mode) => mode switch
+    {
+        LicenseFeatures.CashierModeBarcode => "باركود فقط",
+        LicenseFeatures.CashierModeTouch => "لمس (تاتش) فقط",
+        _ => "يختار بنفسه"
+    };
+
+    private static string FeaturesLabel(string? features)
+    {
+        var allowed = LicenseFeatures.Parse(features).Allowed.Count;
+        var total = LicenseFeatures.AllKeys.Count();
+        return allowed >= total ? "الكل" : $"{allowed} من {total}";
     }
 
     private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)

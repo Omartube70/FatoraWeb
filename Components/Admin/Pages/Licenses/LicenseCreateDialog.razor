@@ -18,7 +18,11 @@
                     <MudSelectItem T="int?" Value="@plan.PlanId">@plan.Name</MudSelectItem>
                 }
             </MudSelect>
-            <MudDatePicker @bind-Date="_startDate" Label="تاريخ البدء (اختياري)" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="_startDate" Label="تاريخ البدء (اختياري)" Variant="Variant.Outlined" Class="mb-3" />
+
+            <MudDivider Class="my-3" />
+            <LicenseCapabilitiesEditor @bind-Platform="_platform" @bind-AllowSync="_allowSync"
+                                       @bind-CashierMode="_features.CashierMode" @bind-Allowed="_features.Allowed" />
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -45,6 +49,11 @@
     private bool _saving;
     private DateTime? _startDate;
 
+    // a new key opens both apps, may sync, and gets everything — narrow it down below
+    private string _platform = "Both";
+    private bool _allowSync = true;
+    private LicenseFeatures _features = new() { Allowed = LicenseFeatures.AllKeys.ToList() };
+
     private class FormModel
     {
         public int? ClientId { get; set; }
@@ -67,7 +76,10 @@
             {
                 ClientId = _model.ClientId!.Value,
                 PlanId = _model.PlanId!.Value,
-                StartDate = _startDate
+                StartDate = _startDate,
+                Platform = _platform,
+                AllowSync = _allowSync,
+                Features = _features.ToJsonOrNull()
             });
 
             MudDialog.Close(DialogResult.Ok(true));
