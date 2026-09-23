@@ -270,3 +270,59 @@
         transform: none !important;
     }
 }
+
+/* Download Buttons Grid for Hero Section */
+.download-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.download-buttons-grid .download-main-button {
+    width: 100%;
+    padding: 16px 24px !important;
+    font-size: 0.95rem !important;
+    justify-content: center;
+}
+
+/* Windows Button - Blue/Purple */
+.download-buttons-grid .download-main-button:first-child {
+    background: linear-gradient(135deg, #6C4CF1 0%, #8B5CF6 100%) !important;
+    box-shadow: 0 8px 20px rgba(108, 76, 241, 0.25) !important;
+}
+
+.download-buttons-grid .download-main-button:first-child:hover {
+    box-shadow: 0 12px 30px rgba(108, 76, 241, 0.35) !important;
+}
+
+/* Android Button - Green */
+.download-buttons-grid .download-main-button:last-child {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%) !important;
+    box-shadow: 0 8px 20px rgba(34, 197, 94, 0.25) !important;
+}
+
+.download-buttons-grid .download-main-button:last-child:hover {
+    box-shadow: 0 12px 30px rgba(34, 197, 94, 0.35) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .download-buttons-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .download-buttons-grid .download-main-button {
+        padding: 14px 20px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .download-buttons-grid .download-main-button {
+        padding: 12px 16px !important;
+        font-size: 0.85rem !important;
+    }
+}
