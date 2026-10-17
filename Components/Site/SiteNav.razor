@@ -1,0 +1,58 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<header class="fx-nav">
+    <div class="fx-container fx-nav__bar">
+        <a class="fx-brand" href="#top" aria-label="Fatora POS">
+            <img class="fx-brand__logo" src="/images/Icon.ico" alt="" width="40" height="40" />
+            <span class="fx-brand__name">Fatora<small>POS</small></span>
+        </a>
+
+        <nav class="fx-nav__menu" id="fx-menu" aria-label="@T("التنقل الرئيسي", "Main navigation")">
+            <a class="fx-nav__link" href="#features" data-spy-link="features">@T("المميزات", "Features")</a>
+            <a class="fx-nav__link" href="#gallery" data-spy-link="gallery">@T("لقطات الشاشة", "Screenshots")</a>
+            <a class="fx-nav__link" href="#pricing" data-spy-link="pricing">@T("الأسعار", "Pricing")</a>
+            <a class="fx-nav__link" href="#download" data-spy-link="download">@T("التحميل", "Download")</a>
+            <a class="fx-nav__link fx-nav__link--star" href="#testimonials" data-spy-link="testimonials">
+                <FxIcon Path="@Icons.Material.Filled.Star" />@T("آراء العملاء", "Customer reviews")
+            </a>
+            <a class="fx-nav__link" href="#faq" data-spy-link="faq">@T("الأسئلة الشائعة", "FAQ")</a>
+            <a class="fx-btn fx-btn--primary fx-btn--sm fx-nav__cta" href="#download">
+                <FxIcon Path="@Icons.Material.Filled.Download" />
+                @T("جرّب مجاناً", "Free trial")
+            </a>
+        </nav>
+
+        @* Always rendered at the top-left corner of the screen, in both languages (see .fx-nav__tools in site.css). *@
+        <div class="fx-nav__tools">
+            <button type="button" class="fx-tool fx-tool--lang" @onclick="OnToggleLanguage"
+                    lang="@T("en", "ar")"
+                    title="@T("Switch to English", "التبديل إلى العربية")"
+                    aria-label="@T("Switch to English", "التبديل إلى العربية")">
+                <FxIcon Path="@Icons.Material.Filled.Translate" />
+                <span>@T("EN", "عربي")</span>
+            </button>
+
+            <button type="button" class="fx-tool fx-tool--theme" data-fx-theme
+                    title="@T("تبديل الوضع الداكن / الفاتح", "Toggle dark / light mode")"
+                    aria-label="@T("تبديل الوضع الداكن / الفاتح", "Toggle dark / light mode")">
+                <svg class="fx-theme__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none" />
+                    <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7" />
+                </svg>
+                <svg class="fx-theme__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a.7.7 0 0 0-.9-.9A10 10 0 1 0 21.3 15.5a.7.7 0 0 0-.9-.9Z" />
+                </svg>
+            </button>
+        </div>
+
+        <button type="button" class="fx-burger" data-fx-menu aria-controls="fx-menu" aria-expanded="false"
+                aria-label="@T("القائمة", "Menu")">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</header>
+
+@code {
+    [Parameter] public EventCallback OnToggleLanguage { get; set; }
+}

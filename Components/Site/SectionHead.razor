@@ -1,0 +1,23 @@
+@namespace Fatora.Components.Site
+
+<header class="fx-head @(Center ? "fx-head--center" : null)">
+    @if (!string.IsNullOrEmpty(Kicker))
+    {
+        <span class="fx-kicker" data-reveal>@Kicker</span>
+    }
+    <h2 class="fx-h2" data-reveal style="--d:.05s">@Title</h2>
+    @if (!string.IsNullOrEmpty(Subtitle))
+    {
+        <p class="fx-lead" data-reveal style="--d:.1s">@Subtitle</p>
+    }
+</header>
+
+@code {
+    [Parameter] public string? Kicker { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter] public string? Subtitle { get; set; }
+
+    [Parameter] public bool Center { get; set; } = true;
+}

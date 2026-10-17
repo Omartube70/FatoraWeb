@@ -1,0 +1,92 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-section fx-testimonials" id="testimonials" data-spy="testimonials">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("عملاؤنا", "Our customers")"
+                     Title="@T("عملاء حقيقيون، وآراء حقيقية", "Real customers, real feedback")"
+                     Subtitle="@T("محلات ومطاعم حقيقية تعمل بفاتورة كل يوم، وهذه صور من أماكن عملهم.", "Shops and restaurants running Fatora in their daily work — these are photos from their counters.")" />
+
+        <div class="fx-tgrid">
+            @for (var i = 0; i < Clients.Length; i++)
+            {
+                var c = Clients[i];
+                <figure class="fx-client" data-reveal data-spot style="--d:@((i * 0.08).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))s;--c:var(--c-@c.Tone)">
+                    <div class="fx-client__media">
+                        <div class="fx-client__photo">
+                            <img src="/images/clients/@c.Main" alt="@T(c.MainAltAr, c.MainAltEn)" style="object-position:@c.MainPosition"
+                                 width="1600" height="1100" loading="lazy" />
+                        </div>
+                        <img class="fx-client__inset" src="/images/clients/@c.Inset" alt="@T(c.InsetAltAr, c.InsetAltEn)" style="object-position:@c.InsetPosition"
+                             width="400" height="500" loading="lazy" />
+                    </div>
+
+                    <div class="fx-client__body">
+                        <div class="fx-client__head">
+                            <h3>@T(c.NameAr, c.NameEn)</h3>
+                            <span class="fx-tag">@T(c.KindAr, c.KindEn)</span>
+                        </div>
+
+                        @if (c.QuoteAr is not null && c.QuoteEn is not null)
+                        {
+                            <blockquote class="fx-client__quote">@T(c.QuoteAr, c.QuoteEn)</blockquote>
+                        }
+                        else
+                        {
+                            <p class="fx-client__note">@T(c.NoteAr, c.NoteEn)</p>
+                        }
+
+                        <figcaption class="fx-client__who">@T(c.WhoAr, c.WhoEn)</figcaption>
+                    </div>
+                </figure>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    // Real customers: the photos come from their shops, and the quotes are their own words (see wwwroot/images/clients).
+    // A customer who hasn't left a written opinion (yet) gets a plain description of the photo instead of an invented quote.
+    private record Client(
+        string Tone,
+        string NameAr, string NameEn,
+        string KindAr, string KindEn,
+        string? QuoteAr, string? QuoteEn,
+        string NoteAr, string NoteEn,
+        string WhoAr, string WhoEn,
+        string Main, string MainPosition, string MainAltAr, string MainAltEn,
+        string Inset, string InsetPosition, string InsetAltAr, string InsetAltEn);
+
+    private static readonly Client[] Clients =
+    [
+        new("violet",
+            "النجار ماركت", "El Naggar Market",
+            "ماركت", "Market",
+            "بصراحة سيستم ممتاز جدًا وسهل في التعامل، والدعم الفني ممتاز. أنا جرّبت أكتر من برنامج، بس فعلًا ده ممتاز، والمهندس عمر ممتاز في التعامل.",
+            "Honestly, an excellent system, very easy to use, and the technical support is excellent. I've tried more than one program, but this one really is excellent, and Eng. Omar is great to deal with.",
+            "", "",
+            "كريم النجار", "Kareem Elnaggar",
+            "naggar-shop.jpg", "50% 40%", "واجهة النجار ماركت", "The El Naggar Market storefront",
+            "naggar-system.jpg", "50% 35%", "فاتورة يعمل على كاشير النجار ماركت", "Fatora running at the El Naggar Market counter"),
+
+        new("teal",
+            "القدس جروب", "Al-Quds Group",
+            "جميع مهمات المصاعد", "Elevator parts & supplies",
+            null, null,
+            "فاتورة يعمل على كاشير القدس جروب بشاشة لمس وطابعة حرارية.",
+            "Fatora running at the Al-Quds Group counter on a touch screen with a thermal printer.",
+            "أ. أحمد", "Mr. Ahmed",
+            "quds-shop.jpg", "38% 50%", "داخل محل القدس جروب لمهمات المصاعد", "Inside the Al-Quds Group elevator-supplies shop",
+            "quds-system.jpg", "50% 50%", "جهاز الكاشير بفاتورة وطابعة الإيصالات", "The Fatora cashier terminal and receipt printer"),
+
+        new("amber",
+            "عباد الرحمن ماركت ومطعم البرنس", "Ebad El-Rahman Market & El Prince Restaurant",
+            "ماركت ومطعم", "Market & restaurant",
+            "المطعم بيشكروا في البرنامج قوي قوي.",
+            "The restaurant team is full of praise for the program.",
+            "", "",
+            "أ. كريم", "Mr. Kareem",
+            "prince-shop.jpg", "50% 78%", "واجهة مطعم البرنس", "The El Prince Restaurant storefront",
+            "ebad-system.jpg", "50% 50%", "فاتورة يعمل على كاشير عباد الرحمن ماركت", "Fatora running at the Ebad El-Rahman Market counter"),
+    ];
+}

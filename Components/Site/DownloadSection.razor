@@ -1,0 +1,144 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+@inject DesktopReleaseService Releases
+@inject DateService Dates
+@inject IWebHostEnvironment Env
+
+<section class="fx-section fx-download" id="download" data-spy="download">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("التحميل", "Download")"
+                     Title="@T($"حمّل فاتورة{VersionTag}", $"Download Fatora{VersionTag}")"
+                     Subtitle="@T("الإصدار الرسمي المستقر، ابدأ تجربتك المجانية لمدة 7 أيام.", "The official stable release - start your free 7-day trial.")" />
+
+        <div class="fx-platforms">
+            <article class="fx-platform" data-reveal data-spot>
+                <span class="fx-platform__icon"><FxIcon Path="@Icons.Material.Filled.DesktopWindows" /></span>
+                <h3>@T("نسخة سطح المكتب", "Desktop version")</h3>
+                <p class="fx-platform__meta">
+                    <span>Windows</span>
+                    @if (_latest is not null)
+                    {
+                        <span class="fx-tag">v@(_latest.Version)</span>
+                    }
+                </p>
+                <p class="fx-platform__text">@T("ويندوز 10 أو أحدث · ", "Windows 10 or later · ")<bdi dir="ltr">.NET Framework 4.8</bdi></p>
+                <a class="fx-btn fx-btn--primary fx-btn--block" target="_blank" rel="noopener"
+                   href="@(_latest?.InstallerUrl ?? Releases.LatestReleasePageUrl)">
+                    <FxIcon Path="@Icons.Material.Filled.Download" />
+                    @T($"تحميل لويندوز{VersionTag}", $"Download for Windows{VersionTag}")
+                </a>
+            </article>
+
+            <article class="fx-platform" data-reveal data-spot style="--d:.08s">
+                <span class="fx-platform__icon fx-platform__icon--green"><FxIcon Path="@Icons.Material.Filled.Android" /></span>
+                <h3>@T("نسخة الموبايل", "Mobile version")</h3>
+                <p class="fx-platform__meta">
+                    <span>Android APK</span>
+                    @if (_apkSize is not null)
+                    {
+                        <span class="fx-tag" dir="ltr">@_apkSize</span>
+                    }
+                </p>
+                <p class="fx-platform__text">@T("أندرويد 7.0 أو أحدث", "Android 7.0 or later")</p>
+                <a class="fx-btn fx-btn--success fx-btn--block" href="/downloads/FatoraMobile.apk" download="FatoraMobile.apk">
+                    <FxIcon Path="@Icons.Material.Filled.Android" />
+                    @T("تحميل تطبيق أندرويد", "Download Android app")
+                </a>
+            </article>
+
+            <article class="fx-platform" data-reveal data-spot style="--d:.16s">
+                <span class="fx-platform__icon fx-platform__icon--amber"><FxIcon Path="@Icons.Material.Filled.Notes" /></span>
+                <h3>@T("ملاحظات الإصدار", "Release notes")</h3>
+                <p class="fx-platform__meta">
+                    <span>@T("تاريخ الإصدار", "Release date")</span>
+                    <span class="fx-tag">@(_latest is null ? "—" : Dates.FormatDate(_latest.PublishedAt))</span>
+                </p>
+                <p class="fx-platform__text">@T("اطّلع على كل ما هو جديد وما تم إصلاحه في هذا الإصدار.", "See everything that's new and fixed in this release.")</p>
+                <a class="fx-btn fx-btn--ghost fx-btn--block" target="_blank" rel="noopener"
+                   href="@(_latest?.PageUrl ?? Releases.LatestReleasePageUrl)">
+                    <FxIcon Path="@Icons.Material.Filled.OpenInNew" />
+                    @T("عرض على GitHub", "View on GitHub")
+                </a>
+            </article>
+        </div>
+
+        <div class="fx-split">
+            <div class="fx-box" data-reveal>
+                <h3 class="fx-box__title">@T($"ماذا يشمل{VersionTag}", $"What's included{VersionTag}")</h3>
+                <ul class="fx-checks">
+                    @foreach (var item in Included)
+                    {
+                        <li><span class="fx-checks__tick"><FxIcon Path="@Icons.Material.Filled.Check" /></span>@T(item.Ar, item.En)</li>
+                    }
+                </ul>
+            </div>
+
+            <div class="fx-box" data-reveal style="--d:.08s">
+                <h3 class="fx-box__title">@T("خطوات التثبيت", "Installation steps")</h3>
+                <ol class="fx-steps">
+                    <li>
+                        <span>@((MarkupString)T($"حمّل ملف التثبيت <strong>{EncodedInstallerName}</strong> من الزر أعلاه.", $"Download <strong>{EncodedInstallerName}</strong> from the button above."))</span>
+                    </li>
+                    <li><span>@((MarkupString)T("استخرج الملف <strong>Fatora-Database-Scripts.zip</strong> من إصدارات GitHub.", "Extract <strong>Fatora-Database-Scripts.zip</strong> from the GitHub releases."))</span></li>
+                    <li><span>@((MarkupString)T("تأكد من تثبيت <bdi dir=\"ltr\">.NET Framework 4.8</bdi> و<bdi dir=\"ltr\">SQL Server 2019 Express</bdi>.", "Make sure .NET Framework 4.8 and SQL Server 2019 Express are installed."))</span></li>
+                    <li><span>@T("شغّل ملف التثبيت واتبع معالج الإعداد.", "Run the installer and follow the setup wizard.")</span></li>
+                    <li><span>@((MarkupString)T("بيانات الدخول الافتراضية: اسم المستخدم <strong>Admin</strong> وكلمة المرور <strong>Admin@123</strong>.", "Default credentials: username <strong>Admin</strong>, password <strong>Admin@123</strong>."))</span></li>
+                    <li><span>@T("غيّر كلمة المرور فور أول تسجيل دخول.", "Change your password right after your first login.")</span></li>
+                </ol>
+            </div>
+        </div>
+
+        @if (_releases.Count > 0)
+        {
+            <div class="fx-box fx-history" data-reveal>
+                <h3 class="fx-box__title">@T("سجل الإصدارات", "Release history")</h3>
+                <ul class="fx-history__list">
+                    @foreach (var release in _releases)
+                    {
+                        <li>
+                            <span class="fx-tag @(release == _latest ? "fx-tag--accent" : null)">v@(release.Version)</span>
+                            <span class="fx-history__date" dir="ltr">@Dates.FormatDate(release.PublishedAt)</span>
+                            <span class="fx-history__name">@release.Name</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private record Item(string Ar, string En);
+
+    private static readonly Item[] Included =
+    [
+        new("نظام كاشير ومبيعات متكامل مع دعم قارئ الباركود", "Complete sales & cashier system with barcode scanner support"),
+        new("إدارة ذكية للمخزون مع تنبيهات انخفاض الكمية", "Smart inventory management with low-stock alerts"),
+        new("إدارة الموردين والمشتريات مع تحديث المخزون تلقائياً", "Supplier & purchase management with automatic stock updates"),
+        new("لوحة تحكم تفاعلية بتحليلات لحظية", "Interactive dashboard with real-time analytics"),
+        new("تحكم بالصلاحيات حسب أدوار فريق العمل", "Role-based access control for your team"),
+        new("أمان متقدم مع قاعدة بيانات SQL Server", "Enterprise-grade security with an SQL Server backend"),
+        new("واجهة كاملة بالعربية والإنجليزية", "Full Arabic & English interface"),
+        new("دعم الطابعات الحرارية لطباعة الإيصالات", "Thermal printer support for receipts"),
+    ];
+
+    // The desktop links and version come from the newest GitHub release, never typed by hand.
+    private IReadOnlyList<DesktopRelease> _releases = [];
+    private DesktopRelease? _latest;
+    private string? _apkSize;
+
+    private string VersionTag => _latest is null ? "" : $" v{_latest.Version}";
+
+    // Goes into raw markup (for the <strong>), and the name comes from GitHub, so it must be encoded.
+    private string EncodedInstallerName
+        => System.Net.WebUtility.HtmlEncode(_latest?.InstallerName ?? T("ملف تثبيت فاتورة", "the Fatora setup file"));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _releases = await Releases.GetReleasesAsync();
+        _latest = _releases.FirstOrDefault();
+
+        var apk = Env.WebRootFileProvider.GetFileInfo(SiteInfo.ApkPath);
+        if (apk.Exists) _apkSize = $"{apk.Length / 1024d / 1024d:0.#} MB";
+    }
+}

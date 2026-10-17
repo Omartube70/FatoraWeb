@@ -1,0 +1,100 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-section fx-faq" id="faq" data-spy="faq">
+    <div class="fx-container fx-container--narrow">
+        <SectionHead Kicker="@T("الأسئلة الشائعة", "FAQ")"
+                     Title="@T("كل ما تريد معرفته عن فاتورة", "Everything you want to know about Fatora")"
+                     Subtitle="@T("لم تجد إجابتك؟ فريق الدعم جاهز لمساعدتك.", "Can't find your answer? Our support team is here to help.")" />
+
+        <div class="fx-acc">
+            @for (var i = 0; i < Items.Length; i++)
+            {
+                var index = i;
+                var item = Items[i];
+                var open = _open == i;
+                <div class="fx-acc__item @(open ? "is-open" : null)" data-reveal style="--d:@((i * 0.04).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))s">
+                    <h3>
+                        <button type="button" class="fx-acc__q" id="faq-q-@i" aria-expanded="@(open ? "true" : "false")" aria-controls="faq-a-@i"
+                                @onclick="() => Toggle(index)">
+                            <span>@T(item.QAr, item.QEn)</span>
+                            <span class="fx-acc__chev"><FxIcon Path="@Icons.Material.Filled.ExpandMore" /></span>
+                        </button>
+                    </h3>
+                    <div class="fx-acc__panel" id="faq-a-@i" role="region" aria-labelledby="faq-q-@i">
+                        <div class="fx-acc__inner">
+                            <p>@((MarkupString)T(item.AAr, item.AEn))</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="fx-support" data-reveal>
+            <div>
+                <h3>@T("ما زالت لديك أسئلة؟", "Still have questions?")</h3>
+                <p>@T("فريق الدعم متاح لمساعدتك في الاستفادة القصوى من فاتورة. وقبل أي سؤال، شاهد الشرح الكامل للنظام.", "Our support team is available to help you get the most out of Fatora. Before you ask, please watch the full system walkthrough.")</p>
+                <a class="fx-link" href="#video">
+                    <FxIcon Path="@Icons.Material.Filled.PlayCircle" />
+                    @T("شاهد الشرح الكامل", "Watch the full walkthrough")
+                </a>
+            </div>
+            <div class="fx-support__actions">
+                <a class="fx-btn fx-btn--primary" target="_blank" rel="noopener"
+                   href="@SiteInfo.WhatsApp(T("مرحباً، لدي سؤال عن فاتورة POS", "Hi, I have a question about Fatora POS"))">
+                    <FxIcon Path="@Icons.Custom.Brands.WhatsApp" />
+                    @T("تواصل عبر واتساب", "Chat on WhatsApp")
+                </a>
+                <a class="fx-btn fx-btn--ghost" href="mailto:@SiteInfo.SupportEmail">
+                    <FxIcon Path="@Icons.Material.Filled.Email" />
+                    @T("راسل الدعم", "Email support")
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private record Faq(string QAr, string AAr, string QEn, string AEn);
+
+    // Answers are fixed strings written here (never user input), so they may contain <strong>.
+    private static readonly Faq[] Items =
+    [
+        new("كم سعر فاتورة POS؟",
+            "نسخة الكمبيوتر بـ <strong>4,000 جنيه</strong> ونسخة الموبايل بـ <strong>2,500 جنيه</strong>، دفعة واحدة لكل نسخة مع ترخيص مدى الحياة وتحديثات ودعم فني مجاناً. والمزامنة مع السيرفر اختيارية وتكلّف <strong>1,000 جنيه سنوياً</strong>. بدون رسوم خفية.",
+            "What does Fatora POS cost?",
+            "The desktop version is <strong>4,000 EGP</strong> and the mobile version is <strong>2,500 EGP</strong> - a one-time payment for each, with a lifetime licence, free updates and technical support. Server sync is optional and costs <strong>1,000 EGP a year</strong>. No hidden fees."),
+        new("هل توجد نسخة تجريبية مجانية؟",
+            "نعم! نقدم <strong>تجربة مجانية لمدة 7 أيام</strong> بكل المميزات ودون الحاجة لبطاقة ائتمان. حمّل البرنامج وابدأ فوراً.",
+            "Is there a free trial?",
+            "Yes! We offer a <strong>7-day free trial</strong> with every feature and no credit card required. Download it and start right away."),
+        new("هل يحتاج البرنامج إلى اتصال بالإنترنت؟",
+            "يمكن لفاتورة العمل <strong>بدون إنترنت بالكامل</strong>؛ واصل البيع وإدارة نشاطك وستتم مزامنة البيانات تلقائياً عند عودة الاتصال.",
+            "Does Fatora POS need an internet connection?",
+            "Fatora POS can work <strong>completely offline</strong>. Keep selling and managing your business, and your data syncs automatically when the connection returns."),
+        new("ما هي متطلبات التشغيل؟",
+            "ويندوز 10 أو أحدث، و<bdi dir=\"ltr\">.NET Framework 4.8</bdi>، و<bdi dir=\"ltr\">SQL Server</bdi> (نسخة Express أو أعلى)، ومساحة حوالي 450 ميجابايت على القرص. وتطبيق الموبايل يحتاج أندرويد 7.0 أو أحدث.",
+            "What are the system requirements?",
+            "Windows 10 or later, .NET Framework 4.8, SQL Server (Express or higher) and about 450 MB of disk space. The mobile app needs Android 7.0 or later."),
+        new("هل البرنامج متاح بالعربية؟",
+            "نعم، فاتورة يدعم <strong>اللغة العربية بالكامل</strong> ويمكنك التبديل بين العربية والإنجليزية من الإعدادات دون إعادة تشغيل البرنامج.",
+            "Is Fatora POS available in Arabic?",
+            "Yes - Fatora POS has <strong>full Arabic support</strong>, and you can switch between Arabic and English from the settings without restarting the app."),
+        new("هل يدعم الطابعات الحرارية؟",
+            "<strong>نعم!</strong> يدعم البرنامج الطابعات الحرارية مباشرةً لطباعة الإيصالات بتنسيق احترافي.",
+            "Does it support thermal printers?",
+            "<strong>Yes!</strong> Fatora POS has built-in support for thermal printers, so receipts print directly with a professional layout."),
+        new("كيف يتم النسخ الاحتياطي لبياناتي؟",
+            "يوفر البرنامج <strong>نسخاً احتياطياً تلقائياً</strong> مع حماية متقدمة، ويمكنك أيضاً أخذ نسخة يدوية في أي وقت.",
+            "How is my data backed up?",
+            "Fatora POS includes <strong>automatic backup</strong> with advanced protection, and you can also take a manual backup at any time."),
+        new("هل يمكن لأكثر من مستخدم استخدامه بصلاحيات مختلفة؟",
+            "<strong>بالتأكيد!</strong> يمكنك إنشاء عدة حسابات بأدوار وصلاحيات مختلفة لفريقك لضمان الأمان والمساءلة.",
+            "Can several users work with different permissions?",
+            "<strong>Absolutely!</strong> Create multiple accounts with different roles and permission levels for your team, for proper security and accountability."),
+    ];
+
+    private int _open = 0;
+
+    private void Toggle(int index) => _open = _open == index ? -1 : index;
+}

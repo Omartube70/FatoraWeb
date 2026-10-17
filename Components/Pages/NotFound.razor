@@ -1,5 +1,22 @@
 ﻿@page "/not-found"
 @layout MainLayout
+@inherits FxComponentBase
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>@T("الصفحة غير موجودة | فاتورة POS", "Page not found | Fatora POS")</PageTitle>
+
+<section class="fx-notfound">
+    <div class="fx-hero__bg" aria-hidden="true">
+        <i class="fx-orb fx-orb--1"></i>
+        <i class="fx-orb fx-orb--2"></i>
+        <i class="fx-hero__grid"></i>
+    </div>
+    <div class="fx-container fx-notfound__inner">
+        <p class="fx-notfound__code" dir="ltr" aria-hidden="true">4<span><FxIcon Path="@Icons.Material.Filled.ShoppingCart" /></span>4</p>
+        <h1 class="fx-notfound__title">@T("الصفحة غير موجودة", "Page not found")</h1>
+        <p class="fx-notfound__text">@T("يبدو أن الصفحة التي تبحث عنها غير موجودة أو تم نقلها.", "The page you're looking for doesn't exist or has been moved.")</p>
+        <a class="fx-btn fx-btn--primary fx-btn--lg" href="/">
+            <FxIcon Path="@Icons.Material.Filled.Home" />
+            @T("العودة للرئيسية", "Back to home")
+        </a>
+    </div>
+</section>

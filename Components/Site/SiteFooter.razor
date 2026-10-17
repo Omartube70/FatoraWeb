@@ -1,0 +1,52 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+@inject DesktopReleaseService Releases
+
+<footer class="fx-footer">
+    <div class="fx-container">
+        <div class="fx-footer__grid">
+            <div class="fx-footer__brand">
+                <a class="fx-brand" href="#top" aria-label="Fatora POS">
+                    <img class="fx-brand__logo" src="/images/Icon.ico" alt="" width="40" height="40" loading="lazy" />
+                    <span class="fx-brand__name">Fatora<small>POS</small></span>
+                </a>
+                <p>@T("نظام كاشير ومخزون متكامل: إدارة أسهل، أرباح أكثر.", "A complete POS and inventory system: easier management, more profit.")</p>
+                <div class="fx-footer__social">
+                    <a href="@SiteInfo.WhatsApp(T("مرحباً، أريد الاستفسار عن فاتورة POS", "Hi, I'd like to know more about Fatora POS"))" target="_blank" rel="noopener" aria-label="WhatsApp"><FxIcon Path="@Icons.Custom.Brands.WhatsApp" /></a>
+                    <a href="https://www.youtube.com/@@FatoraPOS" target="_blank" rel="noopener" aria-label="YouTube"><FxIcon Path="@Icons.Custom.Brands.YouTube" /></a>
+                    <a href="@Releases.RepositoryUrl" target="_blank" rel="noopener" aria-label="GitHub"><FxIcon Path="@Icons.Custom.Brands.GitHub" /></a>
+                    <a href="mailto:@SiteInfo.SupportEmail" aria-label="@T("البريد الإلكتروني", "Email")"><FxIcon Path="@Icons.Material.Filled.Email" /></a>
+                </div>
+            </div>
+
+            <nav class="fx-footer__col" aria-label="@T("المنتج", "Product")">
+                <h4>@T("المنتج", "Product")</h4>
+                <a href="#features">@T("المميزات", "Features")</a>
+                <a href="#gallery">@T("لقطات الشاشة", "Screenshots")</a>
+                <a href="#pricing">@T("الأسعار", "Pricing")</a>
+                <a href="#download">@T("التحميل", "Download")</a>
+            </nav>
+
+            <nav class="fx-footer__col" aria-label="@T("المساعدة", "Help")">
+                <h4>@T("المساعدة", "Help")</h4>
+                <a href="#video">@T("العرض التوضيحي", "Demo")</a>
+                <a href="#testimonials">@T("آراء العملاء", "Customer reviews")</a>
+                <a href="#faq">@T("الأسئلة الشائعة", "FAQ")</a>
+                <a href="@Releases.LatestReleasePageUrl" target="_blank" rel="noopener">@T("ملاحظات الإصدارات", "Release notes")</a>
+            </nav>
+
+            <div class="fx-footer__col">
+                <h4>@T("تواصل معنا", "Contact")</h4>
+                <a href="@SiteInfo.WhatsApp(T("مرحباً", "Hello"))" target="_blank" rel="noopener" dir="ltr">@SiteInfo.WhatsAppDisplay</a>
+                <a href="mailto:@SiteInfo.SupportEmail" dir="ltr">@SiteInfo.SupportEmail</a>
+            </div>
+        </div>
+
+        <div class="fx-footer__bottom">
+            <p>&copy; @DateTime.Now.Year Fatora POS. @T("جميع الحقوق محفوظة.", "All rights reserved.")</p>
+        </div>
+    </div>
+</footer>
+
+@code {
+}

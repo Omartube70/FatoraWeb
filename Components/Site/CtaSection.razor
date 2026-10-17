@@ -1,0 +1,34 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-cta" id="trial" data-spy="trial">
+    <div class="fx-container">
+        <div class="fx-cta__card" data-reveal="zoom">
+            <i class="fx-orb fx-orb--cta1" aria-hidden="true"></i>
+            <i class="fx-orb fx-orb--cta2" aria-hidden="true"></i>
+
+            <h2 class="fx-cta__title">@T("جاهز لتطوير نشاطك التجاري؟", "Ready to transform your business?")</h2>
+            <p class="fx-cta__lead">@T("ابدأ تجربتك المجانية لمدة 7 أيام وشاهد بنفسك كيف تبسّط فاتورة عملك اليومي.", "Start your free 7-day trial and see for yourself how Fatora simplifies your day.")</p>
+
+            <div class="fx-cta__actions">
+                <a class="fx-btn fx-btn--light fx-btn--lg" href="#download">
+                    <FxIcon Path="@Icons.Material.Filled.Download" />
+                    @T("حمّل النسخة التجريبية", "Download free trial")
+                </a>
+                <a class="fx-btn fx-btn--outline-light fx-btn--lg" href="#video">
+                    <FxIcon Path="@Icons.Material.Filled.PlayCircle" />
+                    @T("شاهد العرض", "Watch demo")
+                </a>
+            </div>
+
+            <ul class="fx-cta__trust">
+                <li><FxIcon Path="@Icons.Material.Filled.VerifiedUser" />@T("بياناتك محمية", "Your data is protected")</li>
+                <li><FxIcon Path="@Icons.Material.Filled.MoneyOff" />@T("ضمان استرداد الأموال", "Money-back guarantee")</li>
+                <li><FxIcon Path="@Icons.Material.Filled.AllInclusive" />@T("ترخيص مدى الحياة", "Lifetime licence")</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+@code {
+}

@@ -1,0 +1,83 @@
+/*
+ * Global rules shared by every page - including the admin panel, which was built on top of
+ * them. The public site's own design lives in site.css and only touches `.fx` elements,
+ * so changing it never affects the admin panel.
+ */
+:root {
+    --primary: #6C4CF1;
+    --secondary: #8B5CF6;
+    --success: #22C55E;
+    --background: #F8F9FC;
+    --surface: #FFFFFF;
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --error: #EF4444;
+    --info: #3B82F6;
+    --warning: #F59E0B;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: 'Inter', 'system-ui', '-apple-system', 'sans-serif';
+    line-height: 1.6;
+}
+
+h1:focus {
+    outline: none;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.validation-message {
+    color: #e50000;
+}
+
+/* MudBlazor button tweaks used across the admin panel */
+.mud-button-size-small {
+    padding: 8px 16px !important;
+    font-size: 0.85rem !important;
+}
+
+.mud-button-size-medium {
+    padding: 12px 24px !important;
+    font-size: 0.95rem !important;
+}
+
+.mud-button-size-large {
+    padding: 12px 32px !important;
+    font-size: 1rem !important;
+}
+
+.mud-button:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
+.mud-button:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.mud-button-loading {
+    pointer-events: none !important;
+}

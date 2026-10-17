@@ -1,0 +1,136 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-section fx-pricing" id="pricing" data-spy="pricing">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("الأسعار", "Pricing")"
+                     Title="@T("أسعار واضحة، وكل شيء مشمول", "Clear prices, everything included")"
+                     Subtitle="@T("ادفع مرة واحدة لكل نسخة بلا رسوم خفية، والمزامنة مع السيرفر اختيارية بـ 1,000 جنيه سنوياً. جرّب مجاناً 7 أيام قبل أن تقرر.", "Pay once for each version with no hidden fees; server sync is optional at 1,000 EGP a year. Try it free for 7 days before you decide.")" />
+
+        <div class="fx-plans">
+            @for (var i = 0; i < Plans.Length; i++)
+            {
+                var plan = Plans[i];
+                <article class="fx-price" data-reveal="zoom" style="--d:@((i * 0.1).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))s">
+                    <div class="fx-price__top">
+                        <span class="fx-price__plat"><FxIcon Path="@plan.Icon" />@T(plan.PlatformAr, plan.PlatformEn)</span>
+                        <h3 class="fx-price__name">@T(plan.NameAr, plan.NameEn)</h3>
+                        <p class="fx-price__amount">
+                            @if (Ar)
+                            {
+                                <span class="fx-price__num">@plan.Price</span>
+                                <span class="fx-price__cur">ج.م</span>
+                            }
+                            else
+                            {
+                                <span class="fx-price__cur">EGP</span>
+                                <span class="fx-price__num">@plan.Price</span>
+                            }
+                        </p>
+                        <p class="fx-price__note">@T("دفعة واحدة · ترخيص مدى الحياة", "One-time payment · lifetime licence")</p>
+                    </div>
+
+                    <ul class="fx-price__list">
+                        @foreach (var item in plan.Items)
+                        {
+                            <li><span class="fx-price__tick"><FxIcon Path="@Icons.Material.Filled.Check" /></span>@T(item.Ar, item.En)</li>
+                        }
+                    </ul>
+
+                    <a class="fx-btn @(i == 0 ? "fx-btn--primary" : "fx-btn--ghost") fx-btn--lg fx-btn--block" target="_blank" rel="noopener"
+                       href="@SiteInfo.WhatsApp(T(plan.MessageAr, plan.MessageEn))">
+                        <FxIcon Path="@(i == 0 ? Icons.Material.Filled.RocketLaunch : Icons.Custom.Brands.WhatsApp)" />
+                        @T(plan.CtaAr, plan.CtaEn)
+                    </a>
+                    <p class="fx-price__fine">@T(plan.FineAr, plan.FineEn)</p>
+                </article>
+            }
+        </div>
+
+        <div class="fx-addon" data-reveal>
+            <span class="fx-addon__icon"><FxIcon Path="@Icons.Material.Filled.CloudSync" /></span>
+            <div class="fx-addon__text">
+                <span class="fx-tag">@T("اختياري", "Optional")</span>
+                <h3>@T("المزامنة مع السيرفر", "Server sync")</h3>
+                <p>@T("اربط الكمبيوتر والموبايل عبر سيرفر فاتورة، فتظهر كل عملية بيع على كل الأجهزة. بدونها يعمل كل تطبيق بشكل مستقل وبدون إنترنت.", "Link desktop and mobile through the Fatora server so every sale shows up on every device. Without it each app works on its own, offline.")</p>
+            </div>
+            <p class="fx-addon__price">
+                @if (Ar)
+                {
+                    <b>1,000</b> <span>ج.م / سنوياً</span>
+                }
+                else
+                {
+                    <span>EGP</span> <b>1,000</b> <span>/ year</span>
+                }
+            </p>
+        </div>
+
+        <div class="fx-assure fx-assure--row">
+            <div class="fx-assure__card" data-reveal style="--d:.05s">
+                <span class="fx-assure__icon fx-assure__icon--violet"><FxIcon Path="@Icons.Material.Filled.AllInclusive" /></span>
+                <div>
+                    <h3>@T("ترخيص مدى الحياة", "Lifetime licence")</h3>
+                    <p>@T("ادفع مرة واحدة وتحصل على كل التحديثات القادمة مجاناً.", "Pay once and get every future update for free.")</p>
+                </div>
+            </div>
+            <div class="fx-assure__card" data-reveal style="--d:.12s">
+                <span class="fx-assure__icon fx-assure__icon--teal"><FxIcon Path="@Icons.Material.Filled.Shield" /></span>
+                <div>
+                    <h3>@T("آمن 100%", "100% secure")</h3>
+                    <p>@T("حماية متقدمة لبياناتك مع ضمان استرداد الأموال.", "Advanced data protection with a money-back guarantee.")</p>
+                </div>
+            </div>
+            <div class="fx-assure__card" data-reveal style="--d:.19s">
+                <span class="fx-assure__icon fx-assure__icon--amber"><FxIcon Path="@Icons.Material.Filled.SupportAgent" /></span>
+                <div>
+                    <h3>@T("دعم فني مستمر", "Ongoing support")</h3>
+                    <p>@T("فريق دعم جاهز لمساعدتك على الانطلاق والنجاح.", "A support team ready to help you get started and succeed.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private record Item(string Ar, string En);
+
+    private record Plan(
+        string Icon, string PlatformAr, string PlatformEn, string NameAr, string NameEn, string Price,
+        Item[] Items,
+        string CtaAr, string CtaEn, string FineAr, string FineEn, string MessageAr, string MessageEn);
+
+    private static readonly Plan[] Plans =
+    [
+        new(Icons.Material.Filled.DesktopWindows, "ويندوز", "Windows", "نسخة الكمبيوتر", "Desktop version", "4,000",
+        [
+            new("ترخيص مدى الحياة", "Lifetime licence"),
+            new("جميع المميزات مشمولة", "All features included"),
+            new("تحديثات مجانية مدى الحياة", "Free lifetime updates"),
+            new("دعم فني على مدار الساعة", "24/7 priority support"),
+            new("تحديثات الأمان مجاناً", "Free security updates"),
+            new("يعمل بدون إنترنت", "Works offline"),
+            new("دعم الطابعات الحرارية", "Thermal printer support"),
+            new("قاعدة بيانات SQL Server", "SQL Server database"),
+            new("واجهة عربية وإنجليزية", "Arabic & English interface"),
+        ],
+        "ابدأ تجربتك المجانية الآن", "Start your free trial now",
+        "7 أيام وصول كامل · بدون بطاقة ائتمان", "7 days of full access · no credit card needed",
+        "مرحباً، أريد تجربة نسخة الكمبيوتر من فاتورة POS", "Hi, I'd like to try the desktop version of Fatora POS"),
+
+        new(Icons.Material.Filled.PhoneAndroid, "أندرويد", "Android", "نسخة الموبايل", "Mobile version", "2,500",
+        [
+            new("ترخيص مدى الحياة", "Lifetime licence"),
+            new("كاشير ومخزون وعملاء وتقارير", "Cashier, inventory, customers & reports"),
+            new("مسح الباركود بكاميرا الموبايل", "Barcode scanning with the phone camera"),
+            new("يعمل بدون إنترنت بقاعدة بيانات محلية", "Works offline with a local database"),
+            new("طباعة الإيصالات على طابعة بلوتوث حرارية", "Receipts on a Bluetooth thermal printer"),
+            new("تحديثات مجانية مدى الحياة", "Free lifetime updates"),
+            new("دعم فني على مدار الساعة", "24/7 priority support"),
+            new("واجهة عربية وإنجليزية", "Arabic & English interface"),
+        ],
+        "اطلب نسخة الموبايل", "Get the mobile app",
+        "أندرويد 7.0 أو أحدث · دفعة واحدة", "Android 7.0 or later · pay once",
+        "مرحباً، أريد نسخة الموبايل من فاتورة POS", "Hi, I'd like the mobile version of Fatora POS"),
+    ];
+}

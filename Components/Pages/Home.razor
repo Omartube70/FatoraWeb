@@ -1,32 +1,15 @@
 ﻿@page "/"
-@using Fatora.Components.Shared
+@inherits FxComponentBase
 
-<PageTitle>Fatora POS - Professional Point of Sale & Inventory Management</PageTitle>
+<PageTitle>@T("فاتورة POS | نظام كاشير ومخزون متكامل", "Fatora POS | Point of Sale & Inventory Management")</PageTitle>
 
-<!-- Hero Section -->
 <HeroSection />
-
-<!-- Video Section -->
-<VideoSection />
-
-<!-- Features Section -->
+<MarqueeStrip />
 <FeaturesSection />
-
-<!-- Gallery Section -->
-<GallerySection />
-
-<!-- Pricing Section -->
+<ShowcaseSection />
+<VideoSection />
 <PricingSection />
-
-<!-- Trial Section -->
-<TrialSection />
-
-<!-- Download Section -->
 <DownloadSection />
-
-<!-- Testimonials Section -->
 <TestimonialsSection />
-
-<!-- FAQ Section -->
-<FAQSection />
-
+<FaqSection />
+<CtaSection />

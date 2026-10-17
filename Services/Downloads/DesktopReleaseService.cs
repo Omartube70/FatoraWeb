@@ -29,7 +29,9 @@ public class DesktopReleaseService
         _logger = logger;
     }
 
-    public string LatestReleasePageUrl => $"https://github.com/{_repo}/releases/latest";
+    public string RepositoryUrl => $"https://github.com/{_repo}";
+
+    public string LatestReleasePageUrl => $"{RepositoryUrl}/releases/latest";
 
     public async Task<DesktopRelease?> GetLatestAsync(CancellationToken ct = default)
         => (await GetReleasesAsync(ct)).FirstOrDefault();

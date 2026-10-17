@@ -1,30 +1,33 @@
 ﻿@page "/Error"
 @using System.Diagnostics
+@inherits FxComponentBase
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@T("حدث خطأ | فاتورة POS", "Error | Fatora POS")</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<section class="fx-notfound">
+    <div class="fx-hero__bg" aria-hidden="true">
+        <i class="fx-orb fx-orb--1"></i>
+        <i class="fx-orb fx-orb--2"></i>
+        <i class="fx-hero__grid"></i>
+    </div>
+    <div class="fx-container fx-notfound__inner">
+        <p class="fx-notfound__code fx-notfound__code--error" aria-hidden="true"><span><FxIcon Path="@Icons.Material.Filled.ErrorOutline" /></span></p>
+        <h1 class="fx-notfound__title">@T("حدث خطأ أثناء معالجة طلبك", "An error occurred while processing your request")</h1>
+        <p class="fx-notfound__text">@T("نعتذر عن ذلك. حاول مرة أخرى بعد قليل، وإن استمرت المشكلة تواصل معنا.", "Sorry about that. Please try again in a moment, and contact us if the problem continues.")</p>
 
-@if (ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
-    </p>
-}
+        @if (ShowRequestId)
+        {
+            <p class="fx-notfound__id"><strong>@T("رقم الطلب:", "Request ID:")</strong> <code dir="ltr">@RequestId</code></p>
+        }
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+        <a class="fx-btn fx-btn--primary fx-btn--lg" href="/">
+            <FxIcon Path="@Icons.Material.Filled.Home" />
+            @T("العودة للرئيسية", "Back to home")
+        </a>
+    </div>
+</section>
 
-@code{
+@code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 

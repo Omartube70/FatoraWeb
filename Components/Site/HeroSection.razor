@@ -1,0 +1,111 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+@inject DesktopReleaseService Releases
+
+<section class="fx-hero" id="hero" data-spy="hero">
+    <div class="fx-hero__bg" aria-hidden="true">
+        <i class="fx-orb fx-orb--1"></i>
+        <i class="fx-orb fx-orb--2"></i>
+        <i class="fx-orb fx-orb--3"></i>
+        <i class="fx-hero__grid"></i>
+    </div>
+
+    <div class="fx-container fx-hero__inner">
+        <div class="fx-hero__copy">
+            <a class="fx-pill" href="#download" data-reveal>
+                <span class="fx-pill__dot"></span>
+                @if (_latest is null)
+                {
+                    @T("نظام كاشير ومخزون متكامل", "Complete POS & inventory system")
+                }
+                else
+                {
+                    @T($"الإصدار {_latest.Version} متاح الآن", $"Version {_latest.Version} is out now")
+                }
+                <FxIcon Path="@Icons.Material.Filled.ArrowForward" Class="fx-flip" />
+            </a>
+
+            <h1 class="fx-hero__title" data-reveal style="--d:.06s">
+                @T("أدِر محلّك بالكامل", "Run your whole shop")
+                <span class="fx-grad">@T("من شاشة واحدة ذكية", "from one smart screen")</span>
+            </h1>
+
+            <p class="fx-hero__lead" data-reveal style="--d:.12s">
+                @T("فاتورة نظام كاشير ومخزون احترافي لإدارة المبيعات والمخزون والموردين والعملاء والتقارير في مكان واحد، ويعمل حتى بدون إنترنت.",
+                   "Fatora is a professional point-of-sale and inventory system that puts sales, stock, suppliers, customers and reports in one place - and keeps working even offline.")
+            </p>
+
+            <div class="fx-hero__cta" data-reveal style="--d:.18s">
+                <a class="fx-btn fx-btn--primary fx-btn--lg" href="#download">
+                    <FxIcon Path="@Icons.Material.Filled.Download" />
+                    @T("حمّل النسخة التجريبية", "Download free trial")
+                </a>
+                <a class="fx-btn fx-btn--ghost fx-btn--lg" href="#video">
+                    <FxIcon Path="@Icons.Material.Filled.PlayArrow" />
+                    @T("شاهد العرض", "Watch demo")
+                </a>
+            </div>
+
+            <ul class="fx-hero__trust" data-reveal style="--d:.24s">
+                <li><FxIcon Path="@Icons.Material.Filled.CheckCircle" />@T("تجربة مجانية 7 أيام", "7-day free trial")</li>
+                <li><FxIcon Path="@Icons.Material.Filled.CheckCircle" />@T("بدون بطاقة ائتمان", "No credit card")</li>
+                <li><FxIcon Path="@Icons.Material.Filled.CheckCircle" />@T("دفعة واحدة، والمزامنة اختيارية", "One-time payment, sync optional")</li>
+            </ul>
+        </div>
+
+        <div class="fx-hero__visual" data-reveal="zoom" style="--d:.12s">
+            <div class="fx-float">
+                <div class="fx-device" data-tilt>
+                    <div class="fx-device__bar" aria-hidden="true">
+                        <i></i><i></i><i></i>
+                        <span>Fatora POS</span>
+                    </div>
+                    <img class="fx-device__shot" src="/images/screens/desktop/@(Ar ? "ar" : "en")/cashier.png" width="1920" height="1080"
+                         alt="@T("شاشة الكاشير في برنامج فاتورة", "The Fatora POS cashier screen")" fetchpriority="high" />
+                    <span class="fx-device__shine" aria-hidden="true"></span>
+                </div>
+
+                <div class="fx-chip fx-chip--a" aria-hidden="true">
+                    <span class="fx-chip__ico fx-chip__ico--green"><FxIcon Path="@Icons.Material.Filled.Check" /></span>
+                    <span>@T("تمت عملية البيع", "Sale completed")</span>
+                </div>
+                <div class="fx-chip fx-chip--b" aria-hidden="true">
+                    <span class="fx-chip__ico fx-chip__ico--violet"><FxIcon Path="@Icons.Material.Filled.QrCodeScanner" /></span>
+                    <span>@T("تم مسح الباركود", "Barcode scanned")</span>
+                </div>
+                <div class="fx-chip fx-chip--c" aria-hidden="true">
+                    <span class="fx-chip__ico fx-chip__ico--amber"><FxIcon Path="@Icons.Material.Filled.Warning" /></span>
+                    <span>@T("تنبيه: مخزون منخفض", "Low stock alert")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fx-container">
+        <dl class="fx-stats" data-reveal>
+            <div class="fx-stat">
+                <dt><b class="fx-count" style="--to:7"></b></dt>
+                <dd>@T("أيام تجربة مجانية", "Days free trial")</dd>
+            </div>
+            <div class="fx-stat">
+                <dt><b class="fx-count fx-count--plus" style="--to:18"></b></dt>
+                <dd>@T("ميزة متكاملة", "Built-in features")</dd>
+            </div>
+            <div class="fx-stat">
+                <dt><b class="fx-count" style="--to:2"></b></dt>
+                <dd>@T("منصتان: ويندوز وأندرويد", "Platforms: Windows & Android")</dd>
+            </div>
+            <div class="fx-stat">
+                <dt><b class="fx-count" style="--to:0"></b></dt>
+                <dd>@T("اشتراكات شهرية", "Monthly subscriptions")</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+@code {
+    private DesktopRelease? _latest;
+
+    protected override async Task OnInitializedAsync()
+        => _latest = await Releases.GetLatestAsync();
+}

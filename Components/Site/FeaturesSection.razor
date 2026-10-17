@@ -1,0 +1,94 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-section fx-features" id="features" data-spy="features">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("المميزات", "Features")"
+                     Title="@T("كل ما يحتاجه نشاطك التجاري", "Everything your business needs")"
+                     Subtitle="@T("أدوات قوية وبسيطة تغطي البيع والمخزون والحسابات والتقارير، دون تعقيد.", "Powerful yet simple tools covering sales, stock, accounts and reports - without the clutter.")" />
+
+        <div class="fx-showcase3">
+            <article class="fx-fcard" data-reveal style="--d:0s" data-spot>
+                <div class="fx-vis fx-vis--pos" aria-hidden="true">
+                    <div class="pos-scan">
+                        <div class="pos-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        <span class="pos-laser"></span>
+                    </div>
+                    <ul class="pos-lines">
+                        <li style="--i:0"><span>@T("كوكاكولا 250مل", "Coca Cola 250ml")</span><b>12.00</b></li>
+                        <li style="--i:1"><span>@T("خبز أبيض", "White bread")</span><b>20.00</b></li>
+                        <li style="--i:2"><span>@T("لبن طازج", "Fresh milk")</span><b>28.00</b></li>
+                    </ul>
+                    <div class="pos-total"><span>@T("الإجمالي", "Total")</span><b>60.00 @T("ج.م", "EGP")</b></div>
+                </div>
+                <h3 class="fx-fcard__title">@T("كاشير سريع وسهل", "Fast, easy cashier")</h3>
+                <p class="fx-fcard__text">@T("واجهة بيع مصممة للسرعة والدقة، مع دعم كامل لقارئ الباركود واختصارات لوحة المفاتيح.", "A checkout screen built for speed and accuracy, with full barcode-scanner support and keyboard shortcuts.")</p>
+            </article>
+
+            <article class="fx-fcard" data-reveal style="--d:.08s" data-spot>
+                <div class="fx-vis fx-vis--chart" aria-hidden="true">
+                    <div class="chart-bars">
+                        <i style="--h:38%"></i><i style="--h:56%"></i><i style="--h:44%"></i><i style="--h:72%"></i>
+                        <i style="--h:60%"></i><i style="--h:88%"></i><i style="--h:68%"></i>
+                    </div>
+                    <svg class="chart-line" viewBox="0 0 280 120">
+                        <path d="M4 92 C 40 80, 52 60, 84 66 S 138 100, 168 52 S 238 40, 276 12" pathLength="1" />
+                    </svg>
+                    <span class="chart-tag">@T("المبيعات", "Sales")</span>
+                </div>
+                <h3 class="fx-fcard__title">@T("لوحة تحكم وتقارير ذكية", "Smart dashboard & reports")</h3>
+                <p class="fx-fcard__text">@T("تابع المبيعات والأرباح ومؤشرات الأداء لحظة بلحظة، واتخذ قراراتك بناءً على أرقام حقيقية.", "Follow sales, profit and KPIs in real time and make decisions based on real numbers.")</p>
+            </article>
+
+            <article class="fx-fcard" data-reveal style="--d:.16s" data-spot>
+                <div class="fx-vis fx-vis--offline" aria-hidden="true">
+                    <span class="ring ring--1"></span><span class="ring ring--2"></span><span class="ring ring--3"></span>
+                    <span class="offline-core"><FxIcon Path="@Icons.Material.Filled.WifiOff" /></span>
+                    <span class="offline-badge"><FxIcon Path="@Icons.Material.Filled.Check" />@T("تمت المزامنة", "Synced")</span>
+                </div>
+                <h3 class="fx-fcard__title">@T("يعمل حتى بدون إنترنت", "Works even offline")</h3>
+                <p class="fx-fcard__text">@T("واصل البيع وإدارة نشاطك دون اتصال، وتتم المزامنة تلقائياً عند عودة الإنترنت.", "Keep selling and managing without a connection; everything syncs automatically when you're back online.")</p>
+            </article>
+        </div>
+
+        <div class="fx-fgrid">
+            @for (var i = 0; i < Items.Length; i++)
+            {
+                var f = Items[i];
+                <article class="fx-feature" data-reveal data-spot style="--d:@(((i % 3) * 0.07).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))s;--c:var(--c-@f.Tone)">
+                    <span class="fx-feature__icon"><FxIcon Path="@f.Icon" /></span>
+                    <div>
+                        <h3 class="fx-feature__title">@T(f.TitleAr, f.TitleEn)</h3>
+                        <p class="fx-feature__text">@T(f.TextAr, f.TextEn)</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private record Feature(string Icon, string Tone, string TitleAr, string TextAr, string TitleEn, string TextEn);
+
+    private static readonly Feature[] Items =
+    [
+        new(Icons.Material.Filled.QrCodeScanner, "violet", "دعم الباركود", "مسح الباركود والتعرف على المنتجات في لحظات.", "Barcode support", "Scan barcodes and identify products in an instant."),
+        new(Icons.Material.Filled.Inventory2, "teal", "إدارة المخزون", "متابعة لحظية للمخزون وتنبيهات عند نفاد الأصناف.", "Inventory management", "Real-time stock tracking with low-stock alerts."),
+        new(Icons.Material.Filled.ShoppingCart, "amber", "إدارة المشتريات", "تنظيم أوامر الشراء وتحديث المخزون تلقائياً.", "Purchase management", "Streamlined purchasing with automatic stock updates."),
+        new(Icons.Material.Filled.LocalShipping, "sky", "إدارة الموردين", "قاعدة بيانات كاملة للموردين وكل تعاملاتك معهم.", "Supplier management", "A complete supplier database and all your dealings with them."),
+        new(Icons.Material.Filled.People, "rose", "إدارة العملاء", "ملفات تفصيلية للعملاء ومتابعة تعاملاتهم.", "Customer management", "Detailed customer profiles and tracking of their dealings."),
+        new(Icons.Material.Filled.ReceiptLong, "violet", "الفواتير والمعاملات", "سجل كامل للفواتير والمعاملات مع تفاصيل كل عملية.", "Invoices & transactions", "A full record of invoices and transactions, down to every detail."),
+        new(Icons.Material.Filled.AssignmentReturn, "amber", "المرتجعات", "تسجيل المرتجعات وطلبات الإرجاع بخطوات بسيطة.", "Returns", "Record returns and return requests in a few simple steps."),
+        new(Icons.Material.Filled.Assessment, "teal", "تقارير المبيعات والأرباح", "تحليل شامل للمبيعات وهوامش الربح واتجاهاتها، مع تصدير Excel وPDF.", "Sales & profit reports", "Comprehensive analysis of sales, profit margins and trends, with Excel and PDF export."),
+        new(Icons.Material.Filled.AdminPanelSettings, "sky", "الصلاحيات والأدوار", "تحكم دقيق في صلاحيات كل مستخدم وأدوار الفريق.", "Roles & permissions", "Granular access control for every user and team role."),
+        new(Icons.Material.Filled.CloudSync, "rose", "نسخ احتياطي تلقائي", "نسخ احتياطي آمن ومنتظم لبياناتك مع سهولة الاسترجاع.", "Automatic backup", "Secure, scheduled backups with easy recovery."),
+        new(Icons.Material.Filled.Print, "violet", "الطابعات الحرارية", "طباعة مباشرة للإيصالات على الطابعات الحرارية.", "Thermal printers", "Print receipts straight to thermal printers."),
+        new(Icons.Material.Filled.Storage, "teal", "قاعدة بيانات SQL Server", "قاعدة بيانات قوية وموثوقة تناسب النشاط الكبير والصغير.", "SQL Server database", "An enterprise-grade database for reliability and performance."),
+        new(Icons.Material.Filled.Translate, "amber", "واجهة عربية وإنجليزية", "دعم كامل للغة العربية والإنجليزية داخل البرنامج.", "Arabic & English interface", "Full Arabic and English support inside the app."),
+        new(Icons.Material.Filled.Shield, "sky", "أمان عالٍ", "تشفير وحماية متقدمة لبياناتك وحساباتك.", "High security", "Advanced encryption and data protection."),
+        new(Icons.Material.Filled.Bolt, "rose", "أداء سريع", "مُحسَّن للسرعة وسرعة الاستجابة في كل خطوة.", "Fast performance", "Optimised for speed and responsiveness at every step."),
+        new(Icons.Material.Filled.CreditScore, "teal", "التقسيط والبيع الآجل", "خطط تقسيط ومبيعات آجلة للعملاء مع متابعة المدفوع والمتبقي.", "Installments & credit sales", "Installment plans and credit sales for customers, tracking what is paid and what remains."),
+        new(Icons.Material.Filled.AccountBalanceWallet, "amber", "المحافظ الإلكترونية", "تحويل وإيداع وسحب وشحن لمحافظ مثل فودافون كاش وإنستا باي.", "E-wallet transfers", "Transfers, deposits, withdrawals and top-ups for wallets such as Vodafone Cash and InstaPay."),
+        new(Icons.Material.Filled.Schedule, "sky", "الورديات والعهدة النقدية", "فتح وإغلاق الورديات وتتبع حركة النقدية وفروقات الدرج.", "Shifts & cash drawer", "Open and close shifts and track cash movements and drawer differences."),
+    ];
+}

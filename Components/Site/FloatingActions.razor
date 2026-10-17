@@ -1,0 +1,17 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<div class="fx-fab">
+    <a class="fx-fab__top" href="#top" aria-label="@T("العودة للأعلى", "Back to top")">
+        <FxIcon Path="@Icons.Material.Filled.KeyboardArrowUp" />
+    </a>
+    <a class="fx-fab__wa" target="_blank" rel="noopener"
+       href="@SiteInfo.WhatsApp(T("مرحباً، أريد الاستفسار عن فاتورة POS", "Hi, I'd like to know more about Fatora POS"))"
+       aria-label="@T("تواصل عبر واتساب", "Chat on WhatsApp")">
+        <FxIcon Path="@Icons.Custom.Brands.WhatsApp" />
+        <span>@T("واتساب", "WhatsApp")</span>
+    </a>
+</div>
+
+@code {
+}

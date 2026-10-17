@@ -1,0 +1,109 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<section class="fx-section fx-video" id="video" data-spy="video">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("شروحات فيديو", "Video guides")"
+                     Title="@T("تعلّم فاتورة خطوة بخطوة", "Learn Fatora step by step")"
+                     Subtitle="@T("شرح كامل للنظام، وخطوات التسطيب على الكمبيوتر والموبايل، وطريقة تفعيل المزامنة.", "A full walkthrough of the system, installing it on desktop and mobile, and turning on sync.")" />
+
+        <div class="fx-tuts">
+            <div class="fx-tuts__stage" data-reveal="zoom">
+                <div class="fx-player @(Current.Short ? "fx-player--short" : null)">
+                    @if (_playing)
+                    {
+                        <iframe @key="Current.Id" class="fx-player__frame"
+                                src="https://www.youtube-nocookie.com/embed/@Current.Id?autoplay=1&rel=0&modestbranding=1"
+                                title="@T(Current.TitleAr, Current.TitleEn)"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen></iframe>
+                    }
+                    else
+                    {
+                        <button type="button" class="fx-player__poster" @onclick="Play" aria-label="@T("تشغيل الفيديو", "Play the video")">
+                            <img src="https://i.ytimg.com/vi/@Current.Id/hqdefault.jpg" alt="" loading="lazy" />
+                            <span class="fx-player__shade"></span>
+                            <span class="fx-player__play"><FxIcon Path="@Icons.Material.Filled.PlayArrow" /></span>
+                            <span class="fx-player__label">@T(Current.TitleAr, Current.TitleEn)</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="fx-tuts__meta">
+                    <h3>@T(Current.TitleAr, Current.TitleEn)</h3>
+                    <p>@T(Current.TextAr, Current.TextEn)</p>
+                    <a class="fx-link" href="https://youtu.be/@Current.Id" target="_blank" rel="noopener">
+                        <FxIcon Path="@Icons.Material.Filled.OpenInNew" />
+                        @T("افتح على يوتيوب", "Open on YouTube")
+                    </a>
+                </div>
+            </div>
+
+            <ol class="fx-tuts__list" data-reveal style="--d:.1s">
+                @for (var i = 0; i < Videos.Length; i++)
+                {
+                    var index = i;
+                    var v = Videos[i];
+                    <li>
+                        <button type="button" class="fx-tut @(i == _index ? "is-active" : null)" aria-current="@(i == _index ? "true" : "false")"
+                                @onclick="() => Choose(index)">
+                            <span class="fx-tut__num">@(i + 1)</span>
+                            <span class="fx-tut__body">
+                                <strong>@T(v.TitleAr, v.TitleEn)</strong>
+                                <small>@T(v.TextAr, v.TextEn)</small>
+                                @if (v.TagAr is not null && v.TagEn is not null)
+                                {
+                                    <span class="fx-tag fx-tag--accent">@T(v.TagAr, v.TagEn)</span>
+                                }
+                            </span>
+                            <span class="fx-tut__ico"><FxIcon Path="@v.Icon" /></span>
+                        </button>
+                    </li>
+                }
+            </ol>
+        </div>
+
+        <p class="fx-tuts__channel" data-reveal>
+            <a class="fx-btn fx-btn--ghost" href="https://www.youtube.com/@@FatoraPOS" target="_blank" rel="noopener">
+                <FxIcon Path="@Icons.Custom.Brands.YouTube" />
+                @T("قناة فاتورة على يوتيوب", "Fatora on YouTube")
+            </a>
+        </p>
+    </div>
+</section>
+
+@code {
+    private record Video(string Id, bool Short, string Icon, string TitleAr, string TextAr, string TitleEn, string TextEn, string? TagAr = null, string? TagEn = null);
+
+    private static readonly Video[] Videos =
+    [
+        new("5f5DKYJbDlA", false, Icons.Material.Filled.PlayCircle,
+            "شرح كامل مفصّل للنظام", "شاهده كاملاً قبل أي سؤال: كل مميزات البرنامج بالتفصيل.",
+            "Full system walkthrough", "Watch it all before you ask: every feature of the app in detail.",
+            "ابدأ من هنا", "Start here"),
+        new("dFfD1O2Xh1k", false, Icons.Material.Filled.DesktopWindows,
+            "تنزيل وتسطيب نسخة الكمبيوتر", "خطوات تحميل البرنامج وتثبيته على ويندوز.",
+            "Download & install the desktop version", "How to download the app and install it on Windows."),
+        new("qW3Jny_lsbk", true, Icons.Material.Filled.PhoneAndroid,
+            "تنزيل وتسطيب نسخة الموبايل", "خطوات تحميل التطبيق وتثبيته على أندرويد.",
+            "Download & install the mobile version", "How to download the app and install it on Android."),
+        new("LIpRAJvVaVE", false, Icons.Material.Filled.CloudSync,
+            "تفعيل المزامنة", "ربط الكمبيوتر والموبايل ببعض عبر السيرفر.",
+            "Turn on sync", "Link the desktop and the mobile app together through the server."),
+    ];
+
+    private int _index;
+
+    // The player only loads (and YouTube only gets contacted for the video itself) once the visitor presses play.
+    private bool _playing;
+
+    private Video Current => Videos[_index];
+
+    private void Play() => _playing = true;
+
+    private void Choose(int index)
+    {
+        _index = index;
+        _playing = true;
+    }
+}

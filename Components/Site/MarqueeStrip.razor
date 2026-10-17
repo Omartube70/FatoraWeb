@@ -1,0 +1,36 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+
+<div class="fx-marquee" aria-hidden="true">
+    <div class="fx-marquee__track">
+        @for (var pass = 0; pass < 2; pass++)
+        {
+            <ul class="fx-marquee__list">
+                @foreach (var item in Items)
+                {
+                    <li><FxIcon Path="@item.Icon" />@T(item.Ar, item.En)</li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    private record Item(string Icon, string Ar, string En);
+
+    private static readonly Item[] Items =
+    [
+        new(Icons.Material.Filled.PointOfSale, "كاشير سريع", "Fast cashier"),
+        new(Icons.Material.Filled.QrCodeScanner, "قارئ الباركود", "Barcode scanning"),
+        new(Icons.Material.Filled.Inventory2, "إدارة المخزون", "Inventory"),
+        new(Icons.Material.Filled.LocalShipping, "الموردون والمشتريات", "Suppliers & purchases"),
+        new(Icons.Material.Filled.People, "العملاء", "Customers"),
+        new(Icons.Material.Filled.CreditScore, "التقسيط والآجل", "Installments & credit"),
+        new(Icons.Material.Filled.AccountBalanceWallet, "المحافظ الإلكترونية", "E-wallets"),
+        new(Icons.Material.Filled.Assessment, "تقارير وأرباح", "Reports & profit"),
+        new(Icons.Material.Filled.Print, "الطابعات الحرارية", "Thermal printers"),
+        new(Icons.Material.Filled.WifiOff, "يعمل بدون إنترنت", "Works offline"),
+        new(Icons.Material.Filled.CloudSync, "نسخ احتياطي تلقائي", "Automatic backup"),
+        new(Icons.Material.Filled.AdminPanelSettings, "صلاحيات المستخدمين", "User permissions"),
+    ];
+}

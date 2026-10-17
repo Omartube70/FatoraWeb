@@ -1,0 +1,235 @@
+@namespace Fatora.Components.Site
+@inherits FxComponentBase
+@inject IJSRuntime JS
+
+<section class="fx-section fx-showcase" id="gallery" data-spy="gallery">
+    <div class="fx-container">
+        <SectionHead Kicker="@T("لقطات الشاشة", "Screenshots")"
+                     Title="@T("شاهد فاتورة وهو يعمل", "See Fatora in action")"
+                     Subtitle="@T("شاشات حقيقية من البرنامج على الكمبيوتر والموبايل: من الكاشير إلى لوحة التحكم والتقارير.", "Real screens from the app on desktop and on mobile: from the cashier to the dashboard and reports.")" />
+
+        <div class="fx-seg-wrap" data-reveal>
+            <div class="fx-seg @(_mobile ? "is-mobile" : null)" role="tablist" aria-label="@T("اختر المنصة", "Choose a platform")">
+                <span class="fx-seg__thumb" aria-hidden="true"></span>
+                <button type="button" role="tab" class="fx-seg__btn @(!_mobile ? "is-active" : null)" aria-selected="@(!_mobile ? "true" : "false")"
+                        @onclick="() => SetPlatform(false)">
+                    <FxIcon Path="@Icons.Material.Filled.DesktopWindows" />
+                    @T("الكمبيوتر", "Desktop")
+                </button>
+                <button type="button" role="tab" class="fx-seg__btn @(_mobile ? "is-active" : null)" aria-selected="@(_mobile ? "true" : "false")"
+                        @onclick="() => SetPlatform(true)">
+                    <FxIcon Path="@Icons.Material.Filled.PhoneAndroid" />
+                    @T("الموبايل", "Mobile")
+                </button>
+            </div>
+        </div>
+
+        @{
+            RenderFragment images = @<text>
+                @for (var i = 0; i < Shots.Length; i++)
+                {
+                    var shot = Shots[i];
+                    <img @key="Src(shot)" class="fx-stage__img @(i == _index ? "is-active" : null)" src="@Src(shot)"
+                         width="@(_mobile ? 1170 : 1920)" height="@(_mobile ? 2532 : 1080)"
+                         alt="@T(shot.TitleAr, shot.TitleEn)" loading="@(i == 0 ? "eager" : "lazy")" />
+                }
+            </text>;
+        }
+
+        <div class="fx-stage @(_mobile ? "fx-stage--phone" : null)" data-reveal="zoom">
+            <div class="fx-stage__bar">
+                <span class="fx-stage__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="fx-stage__title">@T(Current.TitleAr, Current.TitleEn)</span>
+                <span class="fx-stage__count" dir="ltr">@(_index + 1) / @Shots.Length</span>
+            </div>
+
+            <div class="fx-stage__view">
+                @if (_mobile)
+                {
+                    <div class="fx-phone">
+                        <span class="fx-phone__cam" aria-hidden="true"></span>
+                        <div class="fx-phone__screen">@images</div>
+                    </div>
+                }
+                else
+                {
+                    @images
+                }
+
+                <button type="button" class="fx-stage__nav fx-stage__nav--prev" @onclick="Previous" aria-label="@T("السابق", "Previous")">
+                    <FxIcon Path="@Icons.Material.Filled.ChevronLeft" Class="fx-flip" />
+                </button>
+                <button type="button" class="fx-stage__nav fx-stage__nav--next" @onclick="Next" aria-label="@T("التالي", "Next")">
+                    <FxIcon Path="@Icons.Material.Filled.ChevronRight" Class="fx-flip" />
+                </button>
+                <button type="button" class="fx-stage__zoom" @onclick="OpenLightbox" aria-label="@T("تكبير الصورة", "Enlarge image")">
+                    <FxIcon Path="@Icons.Material.Filled.ZoomIn" />
+                </button>
+            </div>
+
+            <p class="fx-stage__caption">@T(Current.TextAr, Current.TextEn)</p>
+        </div>
+
+        <div class="fx-thumbs @(_mobile ? "fx-thumbs--phone" : null)" role="tablist" aria-label="@T("اختر شاشة", "Choose a screen")" data-reveal style="--d:.1s">
+            @for (var i = 0; i < Shots.Length; i++)
+            {
+                var index = i;
+                var shot = Shots[i];
+                <button @key="Src(shot)" type="button" role="tab" class="fx-thumb @(i == _index ? "is-active" : null)" aria-selected="@(i == _index ? "true" : "false")"
+                        @onclick="() => Select(index)">
+                    <img src="@Src(shot)" alt="" loading="lazy" width="@(_mobile ? 117 : 160)" height="@(_mobile ? 253 : 90)" />
+                    <span>@T(shot.TitleAr, shot.TitleEn)</span>
+                </button>
+            }
+        </div>
+
+        @if (_mobile)
+        {
+            <p class="fx-note">@T("لقطات الموبايل مأخوذة ببيانات تجريبية.", "The mobile screenshots use sample data.")</p>
+        }
+    </div>
+
+    @if (_zoom)
+    {
+        <div class="fx-lightbox @(_mobile ? "fx-lightbox--phone" : null)" role="dialog" aria-modal="true" aria-label="@T(Current.TitleAr, Current.TitleEn)"
+             tabindex="-1" @ref="_lightbox" @onclick="CloseLightbox" @onkeydown="OnKeyDown">
+            <button type="button" class="fx-lightbox__close" @onclick="CloseLightbox" @onclick:stopPropagation="true" aria-label="@T("إغلاق", "Close")">
+                <FxIcon Path="@Icons.Material.Filled.Close" />
+            </button>
+            <button type="button" class="fx-lightbox__nav fx-lightbox__nav--prev" @onclick="Previous" @onclick:stopPropagation="true" aria-label="@T("السابق", "Previous")">
+                <FxIcon Path="@Icons.Material.Filled.ChevronLeft" Class="fx-flip" />
+            </button>
+            <figure class="fx-lightbox__fig" @onclick:stopPropagation="true">
+                <img src="@Src(Current)" alt="@T(Current.TitleAr, Current.TitleEn)" />
+                <figcaption>
+                    <strong>@T(Current.TitleAr, Current.TitleEn)</strong>
+                    <span>@T(Current.TextAr, Current.TextEn)</span>
+                </figcaption>
+            </figure>
+            <button type="button" class="fx-lightbox__nav fx-lightbox__nav--next" @onclick="Next" @onclick:stopPropagation="true" aria-label="@T("التالي", "Next")">
+                <FxIcon Path="@Icons.Material.Filled.ChevronRight" Class="fx-flip" />
+            </button>
+        </div>
+    }
+</section>
+
+@code {
+    private record Shot(string File, string TitleAr, string TextAr, string TitleEn, string TextEn);
+
+    // Desktop: rendered from the real desktop app (every form drawn off-screen with DrawToBitmap).
+    // Mobile: rendered from the real Flutter screens with sample data. One folder per language for both.
+    private static readonly Shot[] DesktopShots =
+    [
+        new("cashier", "شاشة الكاشير", "بيع بأنماط متعددة: عادي واستلام وتوصيل وطاولات وتقسيط وآجل، مع الدفع نقداً أو بالبطاقة أو المحفظة واختصارات لوحة المفاتيح.",
+            "Cashier", "Sell in several modes - retail, takeaway, delivery, tables, installments and credit - and take cash, card or wallet payments, all with keyboard shortcuts."),
+        new("dashboard", "الشاشة الرئيسية", "وصول سريع لكل الأقسام: الكاشير والفواتير والورديات والمخزون والمالية والأشخاص، مع اختصارات للبيع الجديد والمرتجعات والتقارير.",
+            "Home", "Quick access to every area - cashier, invoices, shifts, inventory, finance and people - with shortcuts to a new sale, returns and reports."),
+        new("products", "إدارة المنتجات", "إحصائيات المخزون وتنبيهات النفاد، وبحث بالاسم أو الباركود، وتصفية بالتصنيف والموقع، واستيراد المنتجات من Excel.",
+            "Products", "Stock stats and alerts, search by name or barcode, category and location filters, and importing products from Excel."),
+        new("add-product", "إضافة منتج", "باركود رئيسي وباركودات إضافية، وسعر التكلفة والبيع وهامش الربح، ووحدات متعددة بأسعار تجزئة وجملة.",
+            "Add a product", "A main barcode plus extra ones, cost and sell price with the profit margin, and several units with retail and wholesale prices."),
+        new("categories", "التصنيفات", "نظّم منتجاتك في تصنيفات مع عدد المنتجات في كل تصنيف، وبحث وتصفية سريعة.",
+            "Categories", "Organise your products into categories, see how many products each holds, and search or filter quickly."),
+        new("invoices", "الفواتير", "سجل الفواتير مع إجمالي الإيرادات وطرق الدفع (نقدي، محفظة، تقسيط، آجل) وحالة الطلبات، مع بحث وتصفية.",
+            "Invoices", "The invoice log with total revenue, payment methods (cash, wallet, installment, credit) and order status, plus search and filters."),
+        new("invoice-details", "تفاصيل الفاتورة", "كل أصناف الفاتورة وكمياتها وإجمالياتها، مع زر الطباعة.",
+            "Invoice details", "Every item on the invoice with its quantity and total, and a Print button."),
+        new("installments", "التقسيط", "خطط تقسيط للعملاء مع المبلغ المدفوع والمتبقي وحالة كل خطة.",
+            "Installments", "Installment plans for customers with the amount paid, the amount remaining and the status of each plan."),
+        new("ewallet", "المحافظ الإلكترونية", "تحويل وإيداع وسحب وشحن لمحافظ مثل فودافون كاش وإنستا باي، مع متابعة الأرباح والقروض.",
+            "E-wallets", "Transfers, deposits, withdrawals and top-ups for wallets such as Vodafone Cash and InstaPay, with profit and loan tracking."),
+        new("add-user", "المستخدمون والصلاحيات", "أنشئ مستخدماً واختر دوراً جاهزاً (مدير، كاشير، عارض...) أو تحكّم في 29 صلاحية واحدة واحدة.",
+            "Users & permissions", "Create a user and pick a ready-made role (admin, manager, cashier, viewer...) or fine-tune 29 individual permissions."),
+        new("reports-sales", "التقارير", "تقارير للمبيعات والأرباح والمنتجات والمخزون والموردين والمرتجعات والكاشير والمحافظ وأنواع الطلبات والعروض، مع رسوم بيانية وتصدير Excel وPDF وطباعة.",
+            "Reports", "Reports for sales, profit, products, inventory, suppliers, returns, cashiers, e-wallets, order types and offers - with charts and Excel / PDF export and printing."),
+    ];
+
+    private static readonly Shot[] MobileShots =
+    [
+        new("cashier", "الكاشير", "اختر المنتجات بلمسة أو بالبحث أو بمسح الباركود بكاميرا الموبايل، مع تصنيفات سريعة وعرض مخزون كل صنف.",
+            "Cashier", "Pick products with a tap, a search or by scanning a barcode with the phone camera, with quick category chips and each item's stock."),
+        new("cart", "السلة والدفع", "كميات وإجمالي السلة، والدفع كاش أو فيزا أو محفظة أو تقسيط أو آجل، مع اختيار العميل والخصم.",
+            "Cart & payment", "Quantities and the cart total, payment by cash, card, wallet, installments or credit, plus the customer and a discount."),
+        new("dashboard", "لوحة التحكم", "مبيعات وأرباح اليوم وعدد الفواتير وتنبيه المخزون المنخفض وأفضل المنتجات مبيعاً، مع حالة المزامنة.",
+            "Dashboard", "Today's sales and profit, the invoice count, low-stock alerts and the best sellers, plus the sync status."),
+        new("products", "المنتجات", "بحث بالاسم أو الباركود، وتصنيفات سريعة، وطباعة الباركود، واستيراد المنتجات من Excel.",
+            "Products", "Search by name or barcode, quick category chips, barcode printing and Excel import."),
+        new("invoices", "الفواتير", "فواتير الموبايل والكمبيوتر معاً، مع البحث والتصفية بالتاريخ وإجمالي المبيعات.",
+            "Invoices", "Invoices from the phone and the computer together, with search, a date filter and the sales total."),
+        new("customers", "العملاء", "قائمة العملاء مع من عليه مديونية ومبلغها، وبحث بالاسم أو الهاتف، واستيراد من Excel.",
+            "Customers", "Your customers with who owes and how much, search by name or phone, and Excel import."),
+        new("installments", "الأقساط", "خطط الأقساط مع شريط يوضح المدفوع والمتبقي لكل عميل.",
+            "Installments", "Installment plans with a bar showing what each customer has paid and what remains."),
+        new("wallets", "المحافظ الإلكترونية", "أرصدة المحافظ وعمولات اليوم وعدد العمليات، مع شحن وسحب وتسويات وقروض.",
+            "E-wallets", "Wallet balances, today's commission and operations, with top-ups, withdrawals, adjustments and loans."),
+        new("reports", "التقارير", "تقارير المبيعات والأرباح والمخزون والمرتجعات بفترات جاهزة (اليوم، أمس، آخر 7 أيام، هذا الشهر) ومبيعات كل يوم.",
+            "Reports", "Sales, profit, inventory and returns reports with ready-made periods (today, yesterday, last 7 days, this month) and sales for every day."),
+        new("drawer", "القائمة الجانبية", "كل أقسام البرنامج في قائمة واحدة: الرئيسية والمخزون والمالية والعملاء والفريق، مع المزامنة والإعدادات.",
+            "Side menu", "Every area of the app in one menu: main, inventory, finance, customers & team, plus sync and settings."),
+    ];
+
+    private bool _mobile;
+    private int _index;
+    private bool _zoom;
+    private bool _focusLightbox;
+    private bool _scrollThumb;
+    private ElementReference _lightbox;
+
+    private Shot[] Shots => _mobile ? MobileShots : DesktopShots;
+
+    private Shot Current => Shots[_index];
+
+    private string Src(Shot shot) => $"/images/screens/{(_mobile ? "mobile" : "desktop")}/{(Ar ? "ar" : "en")}/{shot.File}.png";
+
+    private void SetPlatform(bool mobile)
+    {
+        if (_mobile == mobile) return;
+        _mobile = mobile;
+        _index = 0;
+        _scrollThumb = true;
+    }
+
+    private void Select(int index)
+    {
+        _index = index;
+        _scrollThumb = true;
+    }
+
+    private void Next() => Select((_index + 1) % Shots.Length);
+
+    private void Previous() => Select((_index - 1 + Shots.Length) % Shots.Length);
+
+    private void OpenLightbox()
+    {
+        _zoom = true;
+        _focusLightbox = true;
+    }
+
+    private void CloseLightbox() => _zoom = false;
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        // In Arabic the "forward" direction is leftwards, so the arrow keys follow the reading direction.
+        var forward = Ar ? "ArrowLeft" : "ArrowRight";
+        var backward = Ar ? "ArrowRight" : "ArrowLeft";
+
+        if (e.Key == "Escape") CloseLightbox();
+        else if (e.Key == forward) Next();
+        else if (e.Key == backward) Previous();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusLightbox)
+        {
+            _focusLightbox = false;
+            await _lightbox.FocusAsync();
+        }
+
+        if (_scrollThumb)
+        {
+            _scrollThumb = false;
+            await JS.InvokeVoidAsync("fx.centerThumb");
+        }
+    }
+}
