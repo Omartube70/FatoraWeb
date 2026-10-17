@@ -1,5 +1,6 @@
 @namespace Fatora.Components.Shared
 @inject NavigationManager NavigationManager
+@inject DesktopReleaseService DesktopReleases
 
 <section class="hero-section" id="hero">
     <div class="hero-background-gradient"></div>
@@ -50,12 +51,12 @@
                         <div class="download-buttons-grid">
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium"
                                        Class="download-main-button"
-                                       Href="https://github.com/Omartube70/Fatora-Releases/releases/download/v1.0.0/FatoraSetup_Version_1.00.exe"
+                                       Href="@(_latest?.InstallerUrl ?? DesktopReleases.LatestReleasePageUrl)"
                                        Target="_blank">
                                 <div class="button-content">
                                     <MudIcon Icon="@Icons.Material.Filled.Laptop" Size="Size.Small" Class="download-btn-icon" />
                                 </div>
-                                Windows v1.0.0
+                                Windows@(_latest is null ? "" : $" v{_latest.Version}")
                             </MudButton>
                             
                             <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Medium"
@@ -102,6 +103,11 @@
 </section>
 
 @code {
+    private DesktopRelease? _latest;
+
+    protected override async Task OnInitializedAsync()
+        => _latest = await DesktopReleases.GetLatestAsync();
+
     private void ScrollToSection(string sectionId)
     {
         NavigationManager.NavigateTo($"#{sectionId}");

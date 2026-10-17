@@ -2,6 +2,7 @@ using Fatora.Components;
 using Fatora.Services.Api;
 using Fatora.Services.Auth;
 using Fatora.Services.Formatting;
+using Fatora.Services.Downloads;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Services;
 
@@ -76,6 +77,16 @@ builder.Services.AddHttpClient<AuditLogsService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+
+// GitHub releases (the public site's desktop download links follow the newest release)
+builder.Services.AddHttpClient(nameof(DesktopReleaseService), client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Fatora-Web");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+});
+builder.Services.AddSingleton<DesktopReleaseService>();
 
 builder.Services.AddScoped<CurrentAdminService>();
 builder.Services.AddSingleton<CurrencyService>();

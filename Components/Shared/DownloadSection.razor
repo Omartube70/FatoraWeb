@@ -1,14 +1,16 @@
 @namespace Fatora.Components.Shared
+@inject DesktopReleaseService DesktopReleases
+@inject DateService Dates
 
 <section class="download-section" id="download">
     <div class="download-container">
-        <h2 class="section-title">Download Fatora POS v1.0.0</h2>
+        <h2 class="section-title">Download Fatora POS@(VersionTag)</h2>
         <p class="section-subtitle">Official Stable Release - Get started with your free 7-day trial</p>
 
         <div class="download-info-grid">
             <div class="info-card">
                 <h3>Desktop Version</h3>
-                <p>v1.0.0 - Windows</p>
+                <p>@(_latest is null ? "Windows" : $"v{_latest.Version} - Windows")</p>
             </div>
 
             <div class="info-card">
@@ -18,7 +20,7 @@
 
             <div class="info-card">
                 <h3>Release Date</h3>
-                <p>2 weeks ago</p>
+                <p>@(_latest is null ? "—" : Dates.FormatDate(_latest.PublishedAt))</p>
             </div>
 
             <div class="info-card">
@@ -29,11 +31,11 @@
 
         <div class="download-actions">
             <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Medium" Class="download-btn"
-                       Href="https://github.com/Omartube70/Fatora-Releases/releases/download/v1.0.0/FatoraSetup_Version_1.00.exe"
+                       Href="@(_latest?.InstallerUrl ?? DesktopReleases.LatestReleasePageUrl)"
                        Target="_blank">
                 <div class="button-content">
                     <MudIcon Icon="@Icons.Material.Filled.GetApp" Size="Size.Small" Class="btn-icon" />
-                    Download v1.0.0 (Windows)
+                    Download@(VersionTag) (Windows)
                 </div>
             </MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Medium" Class="download-btn"
@@ -45,7 +47,7 @@
                 </div>
             </MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Class="download-btn"
-                       Href="https://github.com/Omartube70/Fatora-Releases/releases/tag/v1.0.0"
+                       Href="@(_latest?.PageUrl ?? DesktopReleases.LatestReleasePageUrl)"
                        Target="_blank">
                 <div class="button-content">
                     <MudIcon Icon="@Icons.Material.Filled.Notes" Size="Size.Small" Class="btn-icon" />
@@ -55,7 +57,7 @@
         </div>
 
         <div class="release-features">
-            <h3 class="features-title">✨ What's Included in v1.0.0</h3>
+            <h3 class="features-title">✨ What's Included@(VersionTag)</h3>
             <ul class="features-list">
                 <li><span class="feature-badge">💰</span> Complete Sales & Cashier System with Barcode Scanner support</li>
                 <li><span class="feature-badge">📦</span> Smart Inventory Management with low stock alerts</li>
@@ -71,7 +73,7 @@
         <div class="installation-guide">
             <h3 class="guide-title">📥 Installation Steps</h3>
             <ol class="guide-steps">
-                <li>Download <strong>FatoraSetup_Version_1.00.exe</strong> from the button above</li>
+                <li>Download <strong>@(_latest?.InstallerName ?? "the Fatora setup file")</strong> from the button above</li>
                 <li>Extract <strong>Fatora-Database-Scripts.zip</strong> from GitHub releases</li>
                 <li>Ensure .NET Framework 4.8 and SQL Server 2019 Express are installed</li>
                 <li>Run the installer and follow the setup wizard</li>
@@ -80,19 +82,35 @@
             </ol>
         </div>
 
-        <div class="version-history">
-            <h3 class="history-title">📝 Release History</h3>
-            <ul class="history-list">
-                <li class="history-item">
-                    <span class="version-badge latest">v1.0.0</span>
-                    <span class="date">2 weeks ago</span>
-                    <span class="notes">🎉 Official Initial Release - Complete POS System with all features</span>
-                </li>
-            </ul>
-        </div>
+        @if (_releases.Count > 0)
+        {
+            <div class="version-history">
+                <h3 class="history-title">📝 Release History</h3>
+                <ul class="history-list">
+                    @foreach (var release in _releases)
+                    {
+                        <li class="history-item">
+                            <span class="version-badge @(release == _latest ? "latest" : "")">v@(release.Version)</span>
+                            <span class="date">@Dates.FormatDate(release.PublishedAt)</span>
+                            <span class="notes">@release.Name</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 </section>
 
 @code {
-    // Download section component
+    // The desktop links and version come from the newest GitHub release, never typed by hand
+    private IReadOnlyList<DesktopRelease> _releases = [];
+    private DesktopRelease? _latest;
+
+    private string VersionTag => _latest is null ? "" : $" v{_latest.Version}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _releases = await DesktopReleases.GetReleasesAsync();
+        _latest = _releases.FirstOrDefault();
+    }
 }
