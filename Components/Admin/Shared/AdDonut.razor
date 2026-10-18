@@ -1,0 +1,43 @@
+@* A ring split by share (a conic-gradient), with the total in the middle and a legend beside it. *@
+@{
+    var total = Slices.Sum(s => s.Value);
+    var acc = 0.0;
+    var stops = new List<string>();
+    foreach (var s in Slices.Where(s => s.Value > 0))
+    {
+        var from = acc / total * 100;
+        acc += s.Value;
+        var to = acc / total * 100;
+        stops.Add($"{ColorOf(s.Tone)} {from.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}% {to.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%");
+    }
+    var ring = total <= 0 ? "var(--fx-line)" : $"conic-gradient({string.Join(", ", stops)})";
+}
+<div class="ad-donut">
+    <div class="ad-donut__wrap">
+        <div class="ad-donut__ring" style="--ring:@ring"></div>
+        <div class="ad-donut__center"><b>@total.ToString("0")</b><span>@CenterLabel</span></div>
+    </div>
+    <ul class="ad-donut__legend">
+        @foreach (var s in Slices)
+        {
+            <li><i class="ad-dot" style="background:@ColorOf(s.Tone)"></i>@s.Label<b>@s.Value.ToString("0")</b></li>
+        }
+    </ul>
+</div>
+
+@code {
+    public sealed record Slice(string Label, double Value, string Tone);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Slice> Slices { get; set; } = Array.Empty<Slice>();
+    [Parameter] public string CenterLabel { get; set; } = "الإجمالي";
+
+    private static string ColorOf(string tone) => tone switch
+    {
+        "violet" => "var(--c-violet)",
+        "teal" => "var(--c-teal)",
+        "amber" => "var(--c-amber)",
+        "sky" => "var(--c-sky)",
+        "rose" => "var(--c-rose)",
+        _ => "var(--fx-ink-3)"
+    };
+}

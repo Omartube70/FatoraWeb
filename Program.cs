@@ -78,6 +78,11 @@ builder.Services.AddHttpClient<AuditLogsService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
+builder.Services.AddHttpClient<InsightsService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+
 // GitHub releases (the public site's desktop download links follow the newest release)
 builder.Services.AddHttpClient(nameof(DesktopReleaseService), client =>
 {
@@ -90,7 +95,7 @@ builder.Services.AddSingleton<DesktopReleaseService>();
 
 builder.Services.AddScoped<CurrentAdminService>();
 builder.Services.AddSingleton<CurrencyService>();
-builder.Services.AddSingleton<DateService>();
+builder.Services.AddScoped<DateService>();
 
 var app = builder.Build();
 

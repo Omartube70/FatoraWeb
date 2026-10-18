@@ -1,0 +1,401 @@
+@page "/admin/devices"
+@page "/admin/activations"
+@layout AdminLayout
+@attribute [Authorize]
+@inherits AdminComponentBase
+@inject InsightsService InsightsApi
+@inject LicensesService LicensesApi
+@inject ClientsService ClientsApi
+@inject ActivationsService ActivationsApi
+@inject IDialogService DialogService
+@inject DateService DateFmt
+
+<PageTitle>الأجهزة وآخر دخول - Fatora POS</PageTitle>
+
+<div class="ad-page">
+    <header class="ad-pagehead">
+        <div>
+            <h1 class="ad-title">الأجهزة وآخر دخول</h1>
+            <p class="ad-sub">كل نسخة من البرنامج (ويندوز وموبايل): من يستخدمها، آخر مستخدم دخل، ومتى ظهرت آخر مرة.</p>
+        </div>
+        <div class="ad-tools">
+            <button type="button" class="ad-btn @(_loading ? "is-busy" : "")" @onclick="LoadAsync" disabled="@_loading">
+                <FxIcon Path="@Icons.Material.Filled.Refresh" />
+                تحديث
+            </button>
+        </div>
+    </header>
+
+    @if (_legacy)
+    {
+        <div class="ad-banner">
+            <FxIcon Path="@Icons.Material.Filled.Info" />
+            <div>
+                <strong>السيرفر لم يُحدَّث بعد.</strong>
+                القائمة كاملة لكن أعمدة «آخر دخول» و«آخر ظهور» تبقى فارغة حتى تنشر النسخة الجديدة من سيرفر التراخيص
+                وتُحدَّث النسخ على الأجهزة.
+            </div>
+        </div>
+    }
+
+    @if (_loading && _all.Count == 0)
+    {
+        <div class="ad-skel" style="height:420px"></div>
+    }
+    else if (_failed)
+    {
+        <div class="ad-banner">
+            <FxIcon Path="@Icons.Material.Filled.Warning" />
+            <div><strong>تعذر تحميل قائمة الأجهزة.</strong> حاول مرة أخرى.</div>
+        </div>
+    }
+    else
+    {
+        <section class="ad-kpis">
+            <AdKpi Index="0" Tone="violet" Icon="@Icons.Material.Filled.Devices" Label="كل النسخ" Value="@_all.Count.ToString()">
+                <Sub><span>نشطة <b>@_all.Count(x => x.Status == "Active")</b></span></Sub>
+            </AdKpi>
+            <AdKpi Index="1" Tone="sky" Icon="@Icons.Material.Filled.Computer" Label="ويندوز" Value="@_all.Count(x => x.Platform == "Desktop").ToString()">
+                <Sub><span>موبايل <b>@_all.Count(x => x.Platform == "Mobile")</b></span></Sub>
+            </AdKpi>
+            <AdKpi Index="2" Tone="teal" Icon="@Icons.Material.Filled.Bolt" Label="استُخدمت خلال ٢٤ ساعة" Value="@_all.Count(IsToday).ToString()">
+                <Sub><span class="ad-pill ad-pill--ok">الآن @_all.Count(x => x.IsOnline)</span></Sub>
+            </AdKpi>
+            <AdKpi Index="3" Tone="rose" Icon="@Icons.Material.Filled.HourglassEmpty" Label="خاملة +٣٠ يوماً" Value="@_all.Count(IsStale).ToString()">
+                <Sub><span>بلا دخول مسجل <b>@_all.Count(IsNoLogin)</b></span></Sub>
+            </AdKpi>
+        </section>
+
+        <section class="ad-card" style="--i:0">
+            <div class="ad-filters" style="margin-block-end:1rem">
+                <div class="ad-search">
+                    <FxIcon Path="@Icons.Material.Filled.Search" />
+                    <input type="search" placeholder="بحث بالعميل أو الجهاز أو المستخدم أو المفتاح..." @bind="Search" @bind:event="oninput" />
+                </div>
+
+                <div class="ad-chips" role="group" aria-label="النوع">
+                    <button type="button" class="ad-chip" aria-pressed="@(_platform == "")" @onclick='() => SetPlatform("")'>الكل</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_platform == "Desktop")" @onclick='() => SetPlatform("Desktop")'>ويندوز</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_platform == "Mobile")" @onclick='() => SetPlatform("Mobile")'>موبايل</button>
+                </div>
+
+                <div class="ad-chips" role="group" aria-label="الحالة">
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "")" @onclick='() => SetView("")'>الكل</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "active")" @onclick='() => SetView("active")'>نشطة</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "today")" @onclick='() => SetView("today")'>استُخدمت اليوم</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "stale")" @onclick='() => SetView("stale")'>خاملة</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "nologin")" @onclick='() => SetView("nologin")'>بدون دخول مسجل</button>
+                    <button type="button" class="ad-chip" aria-pressed="@(_view == "revoked")" @onclick='() => SetView("revoked")'>ملغاة</button>
+                </div>
+
+                <select class="ad-select" @bind="Sort" aria-label="الترتيب">
+                    <option value="login">الأحدث دخولاً</option>
+                    <option value="seen">الأحدث ظهوراً</option>
+                    <option value="client">اسم العميل</option>
+                    <option value="count">الأكثر دخولاً</option>
+                    <option value="activated">الأحدث تفعيلاً</option>
+                </select>
+            </div>
+
+            @{
+                var rows = Filtered().ToList();
+            }
+
+            @if (rows.Count == 0)
+            {
+                <div class="ad-empty">
+                    <FxIcon Path="@Icons.Material.Filled.DevicesOther" />
+                    لا توجد نسخ مطابقة.
+                </div>
+            }
+            else
+            {
+                <div class="ad-tablewrap">
+                    <table class="ad-table">
+                        <thead>
+                            <tr>
+                                <th>العميل</th><th>النسخة</th><th>الجهاز</th><th>الإصدار</th>
+                                <th>آخر دخول</th><th>آخر ظهور</th><th>مرات الدخول</th><th>الحالة</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var x in rows.Take(_take))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="ad-cell-main"><a href="/admin/licenses/@x.LicenseId" style="color:inherit;text-decoration:none">@x.DisplayClient</a></div>
+                                        <div class="ad-cell-sub ad-ltr">@x.LicenseKey</div>
+                                    </td>
+                                    <td><PlatformBadge Platform="@x.Platform" /></td>
+                                    <td>
+                                        <div class="ad-cell-main">@x.DisplayDevice</div>
+                                        <div class="ad-cell-sub" title="@x.OperatingSystem (@x.DeviceId)">@FriendlyOs(x.OperatingSystem)</div>
+                                    </td>
+                                    <td class="ad-ltr ad-num">@x.ApplicationVersion</td>
+                                    <td>
+                                        @if (x.LastLoginAt is null)
+                                        {
+                                            <span class="ad-cell-sub">لم يُسجَّل بعد</span>
+                                        }
+                                        else
+                                        {
+                                            <div class="ad-seen ad-seen--@AdminLabels.Freshness(x.LastLoginAt, x.IsOnline)" title="@DateFmt.FormatDateTime(x.LastLoginAt)">
+                                                <span class="ad-cell-main">@x.LastLoginUser</span>
+                                            </div>
+                                            <div class="ad-cell-sub">@DateFmt.FormatRelative(x.LastLoginAt) · @DateFmt.FormatDateTime(x.LastLoginAt)</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (x.LastSeenAt is null)
+                                        {
+                                            <span class="ad-cell-sub">—</span>
+                                        }
+                                        else
+                                        {
+                                            <div title="@DateFmt.FormatDateTime(x.LastSeenAt)">@DateFmt.FormatRelative(x.LastSeenAt)</div>
+                                            <div class="ad-cell-sub">@DateFmt.FormatDateTime(x.LastSeenAt)</div>
+                                        }
+                                    </td>
+                                    <td class="ad-num">@x.LoginCount</td>
+                                    <td><StatusBadge Status="@x.Status" /></td>
+                                    <td>
+                                        <div class="ad-actions">
+                                            <button type="button" class="ad-iconbtn" title="سجل الدخول" aria-label="سجل الدخول" @onclick="() => ShowHistoryAsync(x)">
+                                                <FxIcon Path="@Icons.Material.Filled.History" />
+                                            </button>
+                                            @if (x.Status != "Active")
+                                            {
+                                                <button type="button" class="ad-iconbtn ad-iconbtn--good" title="إعادة تفعيل" aria-label="إعادة تفعيل" @onclick="() => ReactivateAsync(x)">
+                                                    <FxIcon Path="@Icons.Material.Filled.Replay" />
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="ad-iconbtn ad-iconbtn--bad" title="إلغاء التفعيل" aria-label="إلغاء التفعيل" @onclick="() => RevokeAsync(x)">
+                                                    <FxIcon Path="@Icons.Material.Filled.Block" />
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="ad-card__foot" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+                    <span>يعرض @Math.Min(_take, rows.Count) من @rows.Count نسخة</span>
+                    @if (rows.Count > _take)
+                    {
+                        <button type="button" class="ad-btn" @onclick="() => _take += 25">عرض المزيد</button>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private List<DeviceOverviewDto> _all = new();
+    private bool _loading = true;
+    private bool _failed;
+    private bool _legacy;
+
+    private string _search = string.Empty;
+    private string _platform = string.Empty;
+    private string _view = string.Empty;
+    private string _sort = "login";
+    private int _take = 25;
+
+    private string Search { get => _search; set { _search = value ?? string.Empty; _take = 25; } }
+    private string Sort { get => _sort; set { _sort = value; _take = 25; } }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _failed = false;
+        StateHasChanged();
+
+        try
+        {
+            try
+            {
+                _all = await InsightsApi.GetDevicesAsync();
+                _legacy = false;
+            }
+            catch (ApiException ex) when (ex.StatusCode is 404 or 405)
+            {
+                _all = await LoadLegacyAsync();
+                _legacy = true;
+            }
+        }
+        catch (ApiException ex)
+        {
+            if (ex.StatusCode is 401 or 403) HandleError(ex);
+            else _failed = true;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    // An older server has no devices endpoint: collect them licence by licence, as this page used to.
+    private async Task<List<DeviceOverviewDto>> LoadLegacyAsync()
+    {
+        var licensesTask = LicensesApi.GetAllAsync();
+        var clientsTask = ClientsApi.GetAllAsync();
+        await Task.WhenAll(licensesTask, clientsTask);
+
+        var licenses = licensesTask.Result;
+        var clients = clientsTask.Result.ToDictionary(c => c.ClientId);
+        var lists = await Task.WhenAll(licenses.Select(l => LicensesApi.GetActivationsAsync(l.LicenseId)));
+
+        var rows = new List<DeviceOverviewDto>();
+        for (var i = 0; i < licenses.Count; i++)
+        {
+            var license = licenses[i];
+            clients.TryGetValue(license.ClientId, out var client);
+
+            foreach (var a in lists[i])
+            {
+                var os = a.OperatingSystem.ToLowerInvariant();
+                rows.Add(new DeviceOverviewDto
+                {
+                    ActivationId = a.ActivationId,
+                    LicenseId = license.LicenseId,
+                    LicenseKey = license.LicenseKey,
+                    ClientId = license.ClientId,
+                    ClientName = client?.ClientName ?? "",
+                    BusinessName = client?.BusinessName ?? $"#{license.ClientId}",
+                    DeviceId = a.DeviceId,
+                    MachineName = a.MachineName,
+                    DeviceName = a.DeviceName,
+                    Platform = os.Contains("android") || os.Contains("ios") ? "Mobile" : "Desktop",
+                    OperatingSystem = a.OperatingSystem,
+                    ApplicationVersion = a.ApplicationVersion,
+                    Status = a.Status,
+                    ActivatedAt = a.ActivatedAt,
+                    LastSeenAt = a.LastSeenAt,
+                    LastLoginAt = a.LastLoginAt,
+                    LastLoginUser = a.LastLoginUser,
+                    LoginCount = a.LoginCount
+                });
+            }
+        }
+
+        return rows;
+    }
+
+    // ── filtering ──
+
+    private void SetPlatform(string value) { _platform = value; _take = 25; }
+    private void SetView(string value) { _view = value; _take = 25; }
+
+    private static bool IsToday(DeviceOverviewDto x) =>
+        x.Status == "Active" && x.LastActivity is { } t && DateTime.UtcNow - AsUtc(t) <= TimeSpan.FromHours(24);
+
+    private static bool IsStale(DeviceOverviewDto x) =>
+        x.Status == "Active" && (x.LastActivity is not { } t || DateTime.UtcNow - AsUtc(t) > TimeSpan.FromDays(30));
+
+    private static bool IsNoLogin(DeviceOverviewDto x) => x.Status == "Active" && x.LastLoginAt is null;
+
+    private static DateTime AsUtc(DateTime t) =>
+        t.Kind == DateTimeKind.Local ? t.ToUniversalTime() : DateTime.SpecifyKind(t, DateTimeKind.Utc);
+
+    private IEnumerable<DeviceOverviewDto> Filtered()
+    {
+        IEnumerable<DeviceOverviewDto> q = _all;
+
+        if (_platform != "") q = q.Where(x => x.Platform == _platform);
+
+        q = _view switch
+        {
+            "active" => q.Where(x => x.Status == "Active"),
+            "today" => q.Where(IsToday),
+            "stale" => q.Where(IsStale),
+            "nologin" => q.Where(IsNoLogin),
+            "revoked" => q.Where(x => x.Status != "Active"),
+            _ => q
+        };
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim();
+            q = q.Where(x =>
+                Has(x.ClientName, s) || Has(x.BusinessName, s) || Has(x.LicenseKey, s) || Has(x.MachineName, s) ||
+                Has(x.DeviceName, s) || Has(x.LastLoginUser, s) || Has(x.ApplicationVersion, s) || Has(x.DeviceId, s));
+        }
+
+        return _sort switch
+        {
+            "seen" => q.OrderByDescending(x => x.LastSeenAt ?? DateTime.MinValue),
+            "client" => q.OrderBy(x => x.DisplayClient, StringComparer.CurrentCultureIgnoreCase),
+            "count" => q.OrderByDescending(x => x.LoginCount),
+            "activated" => q.OrderByDescending(x => x.ActivatedAt),
+            _ => q.OrderByDescending(x => x.LastLoginAt ?? DateTime.MinValue).ThenByDescending(x => x.LastSeenAt ?? DateTime.MinValue)
+        };
+    }
+
+    private static bool Has(string? value, string needle) =>
+        value is not null && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>"Microsoft Windows NT 10.0.19045.0" → "Windows 10 / 11"; anything unknown is shown shortened.</summary>
+    private static string FriendlyOs(string? os)
+    {
+        if (string.IsNullOrWhiteSpace(os)) return "";
+
+        var lower = os.ToLowerInvariant();
+        if (lower.Contains("android")) return "Android";
+        if (lower.Contains("ios") || lower.Contains("iphone") || lower.Contains("ipad")) return "iOS";
+        if (lower.Contains("windows nt 10.0")) return "Windows 10 / 11";
+        if (lower.Contains("windows nt 6.3")) return "Windows 8.1";
+        if (lower.Contains("windows nt 6.2")) return "Windows 8";
+        if (lower.Contains("windows nt 6.1")) return "Windows 7";
+        return os.Length <= 26 ? os : os[..26] + "…";
+    }
+
+    // ── actions ──
+
+    private async Task ShowHistoryAsync(DeviceOverviewDto device)
+    {
+        var parameters = new DialogParameters<LoginHistoryDialog> { { x => x.ActivationId, device.ActivationId } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+        await DialogService.ShowAsync<LoginHistoryDialog>($"سجل الدخول — {device.DisplayDevice} ({device.DisplayClient})", parameters, options);
+    }
+
+    private async Task ReactivateAsync(DeviceOverviewDto device)
+    {
+        if (!await ConfirmAsync("إعادة تفعيل الجهاز", $"هل تريد إعادة تفعيل الجهاز \"{device.DisplayDevice}\"؟", Color.Success)) return;
+
+        var ok = await RunAsync(() => ActivationsApi.ReactivateAsync(device.ActivationId), successMessage: "تم إعادة تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task RevokeAsync(DeviceOverviewDto device)
+    {
+        if (!await ConfirmAsync("إلغاء تفعيل الجهاز", $"هل تريد إلغاء تفعيل الجهاز \"{device.DisplayDevice}\"؟")) return;
+
+        var ok = await RunAsync(() => ActivationsApi.RevokeAsync(device.ActivationId), successMessage: "تم إلغاء تفعيل الجهاز");
+        if (ok) await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, Color color = Color.Error)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, title },
+            { x => x.Message, message },
+            { x => x.Color, color }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+}

@@ -1,0 +1,72 @@
+@inherits AdminComponentBase
+@inject InsightsService InsightsApi
+@inject DateService DateFmt
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <div class="ad-skel" style="height:220px"></div>
+        }
+        else if (_failed)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                تعذر تحميل سجل الدخول. قد يكون السيرفر لم يُحدَّث بعد.
+            </MudAlert>
+        }
+        else if (_events.Count == 0)
+        {
+            <div class="ad-empty">لم يُسجَّل أي دخول لهذه النسخة بعد.</div>
+        }
+        else
+        {
+            <div class="ad-tablewrap" style="max-height:60vh">
+                <table class="ad-table">
+                    <thead><tr><th>التاريخ والوقت</th><th>المستخدم</th><th>الإصدار</th><th>عنوان IP</th></tr></thead>
+                    <tbody>
+                        @foreach (var e in _events)
+                        {
+                            <tr>
+                                <td class="ad-num"><div>@DateFmt.FormatDateTime(e.CreatedAt)</div><div class="ad-cell-sub">@DateFmt.FormatRelative(e.CreatedAt)</div></td>
+                                <td class="ad-cell-main">@e.Username</td>
+                                <td class="ad-ltr ad-num">@e.ApplicationVersion</td>
+                                <td class="ad-ltr ad-num">@(e.IpAddress ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Close())">إغلاق</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int ActivationId { get; set; }
+
+    private List<LoginEventDto> _events = new();
+    private bool _loading = true;
+    private bool _failed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        try
+        {
+            _events = await InsightsApi.GetLoginsAsync(activationId: ActivationId, take: 100);
+        }
+        catch (ApiException)
+        {
+            _failed = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

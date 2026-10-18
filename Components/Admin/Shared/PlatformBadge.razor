@@ -1,0 +1,11 @@
+@* Windows or phone copy of the app. *@
+<span class="ad-plat ad-plat--@(IsMobile ? "mobile" : "desktop")">
+    <FxIcon Path="@(IsMobile ? Icons.Material.Filled.PhoneAndroid : Icons.Material.Filled.Computer)" />@(IsMobile ? "موبايل" : "ويندوز")
+</span>
+
+@code {
+    /// <summary>"Desktop" or "Mobile".</summary>
+    [Parameter] public string Platform { get; set; } = "Desktop";
+
+    private bool IsMobile => string.Equals(Platform, "Mobile", StringComparison.OrdinalIgnoreCase);
+}

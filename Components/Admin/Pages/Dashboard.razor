@@ -2,141 +2,738 @@
 @layout AdminLayout
 @attribute [Authorize]
 @inherits AdminComponentBase
+@inject InsightsService InsightsApi
 @inject ClientsService ClientsApi
 @inject PlansService PlansApi
 @inject LicensesService LicensesApi
+@inject DateService DateFmt
 
-<PageTitle>الرئيسية - لوحة الإدارة</PageTitle>
+<PageTitle>لوحة التحكم - Fatora POS</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">نظرة عامة</MudText>
+<div class="ad-page">
+    <header class="ad-pagehead">
+        <div>
+            <h1 class="ad-title">لوحة التحكم</h1>
+            <p class="ad-sub">
+                نظرة شاملة على العملاء والتراخيص والنسخ وحمل السيرفر
+                @if (_updatedAt is not null)
+                {
+                    <text> — آخر تحديث <time>@DateFmt.FormatTime(_updatedAt.Value)</time></text>
+                }
+            </p>
+        </div>
+        <div class="ad-tools">
+            <label class="ad-switch" title="تحديث الأرقام كل دقيقة">
+                <input type="checkbox" checked="@_auto" @onchange="OnAutoChanged" />
+                <span class="ad-switch__track"></span>
+                تحديث تلقائي
+            </label>
+            <button type="button" class="ad-btn @(_refreshing ? "is-busy" : "")" @onclick="RefreshAsync" disabled="@_refreshing">
+                <FxIcon Path="@Icons.Material.Filled.Refresh" />
+                تحديث
+            </button>
+        </div>
+    </header>
 
-@if (_loading)
-{
-    <MudGrid>
-        @for (var i = 0; i < 4; i++)
+    @if (_loading)
+    {
+        <div class="ad-kpis">
+            @for (var i = 0; i < 8; i++)
+            {
+                <div class="ad-skel" style="height:132px"></div>
+            }
+        </div>
+        <div class="ad-grid">
+            <div class="ad-skel ad-span-8" style="height:360px"></div>
+            <div class="ad-skel ad-span-4" style="height:360px"></div>
+        </div>
+    }
+    else if (_failed || _d is null)
+    {
+        <div class="ad-banner">
+            <FxIcon Path="@Icons.Material.Filled.Warning" />
+            <div><strong>تعذر تحميل بيانات اللوحة.</strong> تأكد من اتصال السيرفر ثم اضغط «تحديث».</div>
+        </div>
+    }
+    else
+    {
+        @if (_legacy)
         {
-            <MudItem xs="12" sm="6" md="3"><MudSkeleton Height="110px" /></MudItem>
+            <div class="ad-banner">
+                <FxIcon Path="@Icons.Material.Filled.Info" />
+                <div>
+                    <strong>السيرفر لم يُحدَّث بعد.</strong>
+                    أرقام العملاء والتراخيص ظاهرة، أما «آخر دخول لكل نسخة» و«حمل السيرفر» و«الفواتير» فستظهر
+                    بمجرد نشر النسخة الجديدة من سيرفر التراخيص (Fatora.LicenseServer) وتحديث البرنامج على الأجهزة.
+                </div>
+            </div>
         }
-    </MudGrid>
-}
-else if (_loadFailed)
-{
-    <MudAlert Severity="Severity.Error">تعذر تحميل بيانات الداشبورد. حاول تحديث الصفحة.</MudAlert>
-}
-else
-{
-    <MudGrid Class="mb-6">
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="إجمالي العملاء" Value="@_clients.Count.ToString()" Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="عملاء نشطون" Value="@_clients.Count(c => c.Status == "Active").ToString()" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="عملاء محظورون" Value="@_clients.Count(c => c.Status == "Blocked").ToString()" Icon="@Icons.Material.Filled.Block" Color="Color.Error" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="إجمالي الباقات" Value="@_plans.Count.ToString()" Icon="@Icons.Material.Filled.CardMembership" Color="Color.Info" />
-        </MudItem>
 
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="إجمالي التراخيص" Value="@_licenses.Count.ToString()" Icon="@Icons.Material.Filled.VpnKey" Color="Color.Primary" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="تراخيص نشطة" Value="@_licenses.Count(l => l.Status == "Active").ToString()" Icon="@Icons.Material.Filled.Verified" Color="Color.Success" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="تراخيص موقوفة/ملغاة" Value="@_licenses.Count(l => l.Status is "Suspended" or "Revoked").ToString()" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <StatCard Title="تراخيص منتهية" Value="@_licenses.Count(l => l.Status == "Expired").ToString()" Icon="@Icons.Material.Filled.EventBusy" Color="Color.Error" />
-        </MudItem>
-    </MudGrid>
+        var d = _d;
 
-    <MudGrid>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" Class="mb-3">توزيع حالة التراخيص</MudText>
-                @if (_licenses.Count == 0)
-                {
-                    <MudText Color="Color.Secondary">لا توجد بيانات لعرضها</MudText>
-                }
-                else
-                {
-                    <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@_licenseStatusSeries" ChartLabels="@_licenseStatusLabels" Width="100%" Height="280px" />
-                }
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" Class="mb-3">توزيع التراخيص حسب الباقة</MudText>
-                @if (_licenses.Count == 0 || _plans.Count == 0)
-                {
-                    <MudText Color="Color.Secondary">لا توجد بيانات لعرضها</MudText>
-                }
-                else
-                {
-                    <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="@_planSeries" ChartLabels="@_planLabels" Width="100%" Height="280px" />
-                }
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-}
+        <section class="ad-kpis" aria-label="مؤشرات رئيسية">
+            <AdKpi Index="0" Tone="violet" Icon="@Icons.Material.Filled.People" Label="العملاء" Value="@N(d.Clients.Total)">
+                <Sub>
+                    <span class="ad-pill ad-pill--ok">نشط @d.Clients.Active</span>
+                    @if (d.Clients.Blocked > 0)
+                    {
+                        <span class="ad-pill ad-pill--bad">محظور @d.Clients.Blocked</span>
+                    }
+                    @if (d.Clients.NewThisMonth > 0)
+                    {
+                        <span>+@d.Clients.NewThisMonth هذا الشهر</span>
+                    }
+                </Sub>
+            </AdKpi>
+
+            <AdKpi Index="1" Tone="teal" Icon="@Icons.Material.Filled.VpnKey" Label="التراخيص النشطة" Value="@N(d.Licenses.Active)">
+                <Sub>
+                    <span>من أصل <b>@d.Licenses.Total</b></span>
+                    @if (d.Licenses.ExpiringIn7Days > 0)
+                    {
+                        <span class="ad-pill ad-pill--warn">@d.Licenses.ExpiringIn7Days تنتهي خلال ٧ أيام</span>
+                    }
+                    else if (d.Licenses.Expired > 0)
+                    {
+                        <span class="ad-pill ad-pill--bad">@d.Licenses.Expired منتهية</span>
+                    }
+                </Sub>
+            </AdKpi>
+
+            @if (!_legacy)
+            {
+                <AdKpi Index="2" Tone="sky" Icon="@Icons.Material.Filled.Devices" Label="النسخ المفعّلة" Value="@N(d.Devices.Active)">
+                    <Sub>
+                        <span>ويندوز <b>@d.Devices.Desktop</b></span>
+                        <span>موبايل <b>@d.Devices.Mobile</b></span>
+                    </Sub>
+                </AdKpi>
+
+                <AdKpi Index="3" Tone="amber" Icon="@Icons.Material.Filled.Bolt" Label="استُخدمت خلال ٢٤ ساعة" Value="@N(d.Devices.SeenLast24Hours)">
+                    <Sub>
+                        <span class="ad-pill ad-pill--ok">الآن @d.Devices.OnlineNow</span>
+                        @if (d.Devices.Stale > 0)
+                        {
+                            <span>@d.Devices.Stale لم تُستخدم منذ ٣٠ يوماً</span>
+                        }
+                    </Sub>
+                </AdKpi>
+
+                <AdKpi Index="4" Tone="rose" Icon="@Icons.Material.Filled.Login" Label="تسجيلات الدخول (٢٤ ساعة)" Value="@N(d.Logins.Last24Hours)">
+                    <Sub>
+                        <span>٧ أيام <b>@N(d.Logins.Last7Days)</b></span>
+                        <span>مستخدمون <b>@d.Logins.ActiveUsersLast7Days</b></span>
+                    </Sub>
+                </AdKpi>
+
+                <AdKpi Index="5" Tone="violet" Icon="@Icons.Material.Filled.Dns" Label="طلبات السيرفر اليوم"
+                       Value="@(d.Traffic.HasData ? N(d.Traffic.RequestsToday) : "—")">
+                    <Sub>
+                        @if (d.Traffic.HasData)
+                        {
+                            <span>متوسط يومي <b>@N(d.Traffic.AvgPerDayThisMonth)</b></span>
+                            @TrendPill(d.Traffic.RequestsToday, d.Traffic.RequestsYesterday)
+                        }
+                        else
+                        {
+                            <span>العدّاد بدأ للتو</span>
+                        }
+                    </Sub>
+                </AdKpi>
+
+                <AdKpi Index="6" Tone="teal" Icon="@Icons.Material.Filled.ReceiptLong" Label="فواتير اليوم"
+                       Value="@(d.Invoices.Available ? N(d.Invoices.Today) : "—")">
+                    <Sub>
+                        @if (d.Invoices.Available)
+                        {
+                            <span>متوسط يومي <b>@N(d.Invoices.AvgPerDayThisMonth)</b></span>
+                            <span><b>@d.Invoices.ShopsLast30Days</b> محل</span>
+                        }
+                        else
+                        {
+                            <span>قاعدة المزامنة غير متاحة</span>
+                        }
+                    </Sub>
+                </AdKpi>
+
+                <AdKpi Index="7" Tone="sky" Icon="@Icons.Material.Filled.Sync" Label="أجهزة المزامنة"
+                       Value="@(d.Sync.Available ? N(d.Sync.ActiveDevices) : "—")">
+                    <Sub>
+                        @if (d.Sync.Available)
+                        {
+                            <span>مربوط <b>@d.Sync.Devices</b></span>
+                            @if (d.Sync.LastActivityAt is not null)
+                            {
+                                <span>آخر نشاط @DateFmt.FormatRelative(d.Sync.LastActivityAt)</span>
+                            }
+                        }
+                        else
+                        {
+                            <span>غير متاحة على السيرفر</span>
+                        }
+                    </Sub>
+                </AdKpi>
+            }
+        </section>
+
+        @if (!_legacy)
+        {
+            <div class="ad-grid">
+                @* ───────────── server load ───────────── *@
+                <section class="ad-card ad-span-8" style="--i:0">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.Dns" />حمل السيرفر — عدد الطلبات</div>
+                            <div class="ad-card__hint">كل طلب يصل للسيرفر (التفعيل، التحقق من الترخيص، المزامنة، لوحة الإدارة). لتحديد حجم الاستضافة.</div>
+                        </div>
+                        <div class="ad-tabs" role="group" aria-label="نطاق الرسم">
+                            <button type="button" class="ad-tab" aria-pressed="@(_trafficView == "30")" @onclick='() => _trafficView = "30"'>آخر ٣٠ يوماً</button>
+                            <button type="button" class="ad-tab" aria-pressed="@(_trafficView == "today")" @onclick='() => _trafficView = "today"'>اليوم بالساعة</button>
+                        </div>
+                    </div>
+
+                    @if (!d.Traffic.HasData)
+                    {
+                        <div class="ad-empty">
+                            <FxIcon Path="@Icons.Material.Filled.Dns" />
+                            العدّاد بدأ للتو. ستظهر الأرقام بعد أول دقيقة من تشغيل السيرفر المحدَّث.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="ad-stats">
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Traffic.RequestsToday)</div><div class="ad-stat__label">اليوم حتى الآن</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Traffic.RequestsYesterday)</div><div class="ad-stat__label">أمس</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Traffic.RequestsThisMonth)</div><div class="ad-stat__label">هذا الشهر</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Traffic.AvgPerDayThisMonth)<small>/يوم</small></div><div class="ad-stat__label">المتوسط اليومي (الشهر)</div></div>
+                        </div>
+
+                        @if (_trafficView == "30")
+                        {
+                            <AdBars Columns="_trafficDaily" Series="@TrafficSeries" SeriesColors="@TrafficColors" Height="200" LabelEvery="3" AriaLabel="الطلبات اليومية آخر ٣٠ يوماً" />
+                        }
+                        else
+                        {
+                            <AdBars Columns="_trafficHours" Series="@(new[] { "الطلبات" })" SeriesColors="@(new[] { 0 })" Height="200" LabelEvery="3" AriaLabel="الطلبات اليوم بالساعة" />
+                        }
+                    }
+
+                    <div class="ad-card__foot">
+                        @if (d.Traffic.TrackingSince is not null)
+                        {
+                            <text>العدّاد يعمل منذ @DateFmt.FormatDate(d.Traffic.TrackingSince) — ما قبل ذلك غير محسوب. </text>
+                        }
+                        الأرقام تشمل طلبات هذه اللوحة نفسها.
+                    </div>
+                </section>
+
+                @* ───────────── hosting summary ───────────── *@
+                <section class="ad-card ad-span-4" style="--i:1">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.Speed" />ملخص للاستضافة</div>
+                            <div class="ad-card__hint">الأرقام التي تحتاجها لاختيار الباقة.</div>
+                        </div>
+                    </div>
+
+                    @if (!d.Traffic.HasData)
+                    {
+                        <div class="ad-empty">لا توجد بيانات بعد</div>
+                    }
+                    else
+                    {
+                        <dl class="ad-facts">
+                            <div class="ad-fact ad-fact--strong"><dt>متوسط الطلبات في اليوم<small>هذا الشهر (الأيام المكتملة)</small></dt><dd>@N(d.Traffic.AvgPerDayThisMonth)</dd></div>
+                            <div class="ad-fact"><dt>متوسط آخر ٣٠ يوماً</dt><dd>@N(d.Traffic.AvgPerDayLast30Days)</dd></div>
+                            <div class="ad-fact"><dt>متوسط آخر ٧ أيام</dt><dd>@N(d.Traffic.AvgPerDayLast7Days)</dd></div>
+                            <div class="ad-fact"><dt>المتوقع للشهر كله<small>تقدير حسب المتوسط اليومي</small></dt><dd>@N(ProjectedMonth)</dd></div>
+                            <div class="ad-fact"><dt>متوسط الساعة اليوم</dt><dd>@N(d.Traffic.AvgPerHourToday)</dd></div>
+                            <div class="ad-fact">
+                                <dt>أشد ساعة ضغط<small>@(d.Traffic.BusiestHour is { } bh ? $"{bh:dd/MM} الساعة {bh:HH}:00" : "—") (آخر ٣٠ يوماً)</small></dt>
+                                <dd>@N(d.Traffic.BusiestHourRequests)<small>طلب</small></dd>
+                            </div>
+                            <div class="ad-fact"><dt>في الثانية خلال تلك الساعة<small>متوسط تقريبي</small></dt><dd>@PerSecond(d.Traffic.BusiestHourRequests)<small>طلب/ث</small></dd></div>
+                            <div class="ad-fact">
+                                <dt>أكثر الأيام طلباً<small>@(d.Traffic.BusiestDay is { } bd ? bd.ToString("dd/MM") : "—")</small></dt>
+                                <dd>@N(d.Traffic.BusiestDayRequests)</dd>
+                            </div>
+                            <div class="ad-fact"><dt>أخطاء السيرفر اليوم<small>الطلبات التي انتهت بخطأ من السيرفر</small></dt><dd>@N(d.Traffic.ErrorsToday)</dd></div>
+                            <div class="ad-fact"><dt>أخطاء السيرفر هذا الشهر</dt><dd>@N(d.Traffic.ErrorsThisMonth)</dd></div>
+                        </dl>
+
+                        <div class="ad-card__foot">
+                            الرقم في الثانية متوسط داخل الساعة؛ الذروة اللحظية قد تكون عدة أضعافه.
+                            @if (d.Traffic.TodayByKind.Count > 0)
+                            {
+                                <br />
+                                <span>اليوم: </span>
+                                @foreach (var k in d.Traffic.TodayByKind)
+                                {
+                                    <span class="ad-pill ad-pill--brand" style="margin-inline-end:.3rem">@AdminLabels.RequestKind(k.Name) @N(k.Count)</span>
+                                }
+                            }
+                        </div>
+                    }
+                </section>
+
+                @* ───────────── invoices ───────────── *@
+                <section class="ad-card ad-span-8" style="--i:2">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.ReceiptLong" />الفواتير</div>
+                            <div class="ad-card__hint">كم فاتورة تُنشأ في اليوم عبر المحلات المربوطة بالسيرفر.</div>
+                        </div>
+                    </div>
+
+                    @if (!d.Invoices.Available)
+                    {
+                        <div class="ad-empty">
+                            <FxIcon Path="@Icons.Material.Filled.ReceiptLong" />
+                            قاعدة بيانات المزامنة غير متاحة على السيرفر حالياً.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="ad-stats">
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.Today)</div><div class="ad-stat__label">اليوم</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.Yesterday)</div><div class="ad-stat__label">أمس</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.ThisMonth)</div><div class="ad-stat__label">هذا الشهر</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.AvgPerDayThisMonth)<small>/يوم</small></div><div class="ad-stat__label">متوسط يومي (الشهر)</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.AvgPerDayLast30Days)<small>/يوم</small></div><div class="ad-stat__label">متوسط يومي (٣٠ يوماً)</div></div>
+                            <div class="ad-stat"><div class="ad-stat__value">@N(d.Invoices.AvgPerShopPerDay)<small>/محل</small></div><div class="ad-stat__label">فاتورة لكل محل يومياً</div></div>
+                        </div>
+
+                        <AdBars Columns="_invoiceDaily" Series="@(new[] { "الفواتير" })" SeriesColors="@(new[] { 1 })" Height="170" LabelEvery="3" AriaLabel="الفواتير اليومية آخر ٣٠ يوماً" />
+
+                        <div class="ad-card__foot">
+                            @d.Invoices.ShopsLast30Days محل أرسل فواتير خلال ٣٠ يوماً · إجمالي ما وصل للسيرفر @N(d.Invoices.Total) فاتورة.
+                            تُحسب فقط فواتير المحلات المربوطة بالسيرفر (المزامنة)؛ المحل غير المربوط لا يرسل فواتيره.
+                        </div>
+                    }
+                </section>
+
+                @* ───────────── sign-ins ───────────── *@
+                <section class="ad-card ad-span-4" style="--i:3">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.Login" />تسجيلات الدخول</div>
+                            <div class="ad-card__hint">آخر ١٤ يوماً، ويندوز وموبايل.</div>
+                        </div>
+                    </div>
+
+                    <AdBars Columns="_loginDaily" Series="@(new[] { "ويندوز", "موبايل" })" SeriesColors="@(new[] { 3, 1 })" Height="150" LabelEvery="2" AriaLabel="تسجيلات الدخول آخر ١٤ يوماً" />
+
+                    <dl class="ad-facts" style="margin-block-start:.8rem">
+                        <div class="ad-fact"><dt>آخر ٢٤ ساعة</dt><dd>@N(d.Logins.Last24Hours)</dd></div>
+                        <div class="ad-fact"><dt>آخر ٧ أيام</dt><dd>@N(d.Logins.Last7Days)</dd></div>
+                        <div class="ad-fact"><dt>آخر ٣٠ يوماً</dt><dd>@N(d.Logins.Last30Days)</dd></div>
+                        <div class="ad-fact"><dt>مستخدمون نشطون (٧ أيام)</dt><dd>@d.Logins.ActiveUsersLast7Days</dd></div>
+                    </dl>
+                </section>
+
+                @* ───────────── last login of every copy ───────────── *@
+                <section class="ad-card ad-span-12" style="--i:4">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.History" />آخر دخول لكل نسخة</div>
+                            <div class="ad-card__hint">
+                                يظهر لكل نسخة (ويندوز وموبايل) آخر مستخدم دخل ومتى.
+                                @if (d.Devices.NeverReportedLogin > 0)
+                                {
+                                    <text> @d.Devices.NeverReportedLogin نسخة لم يصل منها دخول بعد — تظهر بعد تحديث البرنامج على جهازها وأول تسجيل دخول.</text>
+                                }
+                            </div>
+                        </div>
+                        <a class="ad-link" href="/admin/devices">عرض كل النسخ (@d.Devices.Total) ←</a>
+                    </div>
+
+                    @if (d.LastLogins.Count == 0)
+                    {
+                        <div class="ad-empty">
+                            <FxIcon Path="@Icons.Material.Filled.Login" />
+                            لم يصل أي تسجيل دخول بعد. يبدأ التسجيل عند أول دخول بعد تحديث البرنامج (ويندوز/موبايل).
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="ad-tablewrap">
+                            <table class="ad-table">
+                                <thead>
+                                    <tr><th>العميل</th><th>النسخة</th><th>الجهاز</th><th>الإصدار</th><th>آخر مستخدم</th><th>آخر دخول</th><th>مرات الدخول</th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var x in d.LastLogins)
+                                    {
+                                        <tr>
+                                            <td><div class="ad-cell-main">@x.DisplayClient</div><div class="ad-cell-sub ad-ltr">@x.LicenseKey</div></td>
+                                            <td><PlatformBadge Platform="@x.Platform" /></td>
+                                            <td>@x.DisplayDevice</td>
+                                            <td class="ad-ltr ad-num">@x.ApplicationVersion</td>
+                                            <td class="ad-cell-main">@x.LastLoginUser</td>
+                                            <td>
+                                                <span class="ad-seen ad-seen--@AdminLabels.Freshness(x.LastLoginAt, x.IsOnline)" title="@DateFmt.FormatDateTime(x.LastLoginAt)">
+                                                    @DateFmt.FormatRelative(x.LastLoginAt)
+                                                </span>
+                                            </td>
+                                            <td class="ad-num">@N(x.LoginCount)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+
+                @* ───────────── recent sign-ins + expiring ───────────── *@
+                <section class="ad-card ad-span-6" style="--i:5">
+                    <div class="ad-card__head">
+                        <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.Person" />أحدث عمليات الدخول</div>
+                    </div>
+                    @if (d.RecentLogins.Count == 0)
+                    {
+                        <div class="ad-empty">لا توجد عمليات دخول مسجلة بعد</div>
+                    }
+                    else
+                    {
+                        <ul class="ad-feed">
+                            @foreach (var e in d.RecentLogins)
+                            {
+                                <li class="ad-feed__item ad-tone-@(e.Platform == "Mobile" ? "teal" : "sky")">
+                                    <span class="ad-avatar">@Initial(e.Username)</span>
+                                    <div class="ad-feed__main">
+                                        <div class="ad-feed__title">@e.Username <span class="ad-cell-sub">— @e.DisplayClient</span></div>
+                                        <div class="ad-feed__meta">@AdminLabels.Platform(e.Platform) · @(string.IsNullOrWhiteSpace(e.DeviceName) ? e.DeviceId : e.DeviceName) · <span class="ad-ltr">@e.ApplicationVersion</span></div>
+                                    </div>
+                                    <div class="ad-feed__end" title="@DateFmt.FormatDateTime(e.CreatedAt)">@DateFmt.FormatRelative(e.CreatedAt)<br />@DateFmt.FormatTime(e.CreatedAt)</div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+
+                <section class="ad-card ad-span-6" style="--i:6">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.EventBusy" />تراخيص تنتهي قريباً</div>
+                            <div class="ad-card__hint">خلال ٣٠ يوماً — @d.Licenses.ExpiringIn7Days منها خلال أسبوع.</div>
+                        </div>
+                        <a class="ad-link" href="/admin/licenses">كل التراخيص ←</a>
+                    </div>
+                    @if (d.ExpiringLicenses.Count == 0)
+                    {
+                        <div class="ad-empty">لا توجد تراخيص تنتهي خلال ٣٠ يوماً 🎉</div>
+                    }
+                    else
+                    {
+                        <ul class="ad-feed">
+                            @foreach (var l in d.ExpiringLicenses)
+                            {
+                                <li class="ad-feed__item ad-tone-@(l.DaysLeft <= 7 ? "rose" : "amber")">
+                                    <span class="ad-avatar"><FxIcon Path="@Icons.Material.Filled.EventBusy" /></span>
+                                    <div class="ad-feed__main">
+                                        <div class="ad-feed__title"><a href="/admin/licenses/@l.LicenseId" style="color:inherit;text-decoration:none">@l.DisplayClient</a></div>
+                                        <div class="ad-feed__meta">@l.PlanName · @AdminLabels.Platform(l.Platform)</div>
+                                    </div>
+                                    <div class="ad-feed__end">
+                                        <span class="ad-pill @(l.DaysLeft <= 7 ? "ad-pill--bad" : "ad-pill--warn")">@DateFmt.FormatDaysLeft(l.DaysLeft)</span><br />
+                                        @DateFmt.FormatDate(l.ExpiryDate)
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </div>
+        }
+
+        @* ───────────── licences / versions (also shown by the fallback) ───────────── *@
+        <div class="ad-grid">
+            <section class="ad-card ad-span-4" style="--i:7">
+                <div class="ad-card__head">
+                    <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.VpnKey" />حالة التراخيص</div>
+                </div>
+                <AdDonut Slices="_licenseSlices" CenterLabel="ترخيص" />
+            </section>
+
+            <section class="ad-card ad-span-4" style="--i:8">
+                <div class="ad-card__head">
+                    <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.CardMembership" />التراخيص حسب الباقة والنوع</div>
+                </div>
+                <AdMeters Items="d.Licenses.ByPlan" />
+                <div style="height:1rem"></div>
+                <AdMeters Items="d.Licenses.ByPlatform" Tone="is-sky" Labeler="AdminLabels.Platform" />
+            </section>
+
+            @if (!_legacy)
+            {
+                <section class="ad-card ad-span-4" style="--i:9">
+                    <div class="ad-card__head">
+                        <div>
+                            <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.SystemUpdateAlt" />إصدارات التطبيق</div>
+                            <div class="ad-card__hint">النسخ النشطة حسب الإصدار — لمعرفة من لم يحدّث.</div>
+                        </div>
+                    </div>
+                    <AdMeters Items="d.Devices.Versions" Tone="is-teal" />
+                </section>
+
+                <section class="ad-card ad-span-12" style="--i:10">
+                    <div class="ad-card__head">
+                        <div class="ad-card__title"><FxIcon Path="@Icons.Material.Filled.History" />آخر العمليات في النظام</div>
+                        <a class="ad-link" href="/admin/activity-log">سجل العمليات كاملاً ←</a>
+                    </div>
+                    @if (d.RecentActivity.Count == 0)
+                    {
+                        <div class="ad-empty">لا توجد عمليات مسجلة</div>
+                    }
+                    else
+                    {
+                        <ul class="ad-feed">
+                            @foreach (var a in d.RecentActivity)
+                            {
+                                <li class="ad-feed__item ad-tone-@AdminLabels.ActionTone(a.Action)">
+                                    <span class="ad-avatar"><FxIcon Path="@Icons.Material.Filled.Bolt" /></span>
+                                    <div class="ad-feed__main">
+                                        <div class="ad-feed__title">@AdminLabels.Action(a.Action)@(string.IsNullOrWhiteSpace(a.ClientName) ? "" : $" — {a.ClientName}")</div>
+                                        <div class="ad-feed__meta">@a.Description</div>
+                                    </div>
+                                    <div class="ad-feed__end" title="@DateFmt.FormatDateTime(a.CreatedAt)">@DateFmt.FormatRelative(a.CreatedAt)</div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            }
+        </div>
+    }
+</div>
 
 @code {
-    private List<ClientDto> _clients = new();
-    private List<PlanDto> _plans = new();
-    private List<LicenseDto> _licenses = new();
+    private static readonly string[] TrafficSeries = { "التراخيص والتفعيل", "المزامنة", "لوحة الإدارة", "أخرى" };
+    private static readonly int[] TrafficColors = { 0, 1, 3, 2 };
 
-    private List<ChartSeries<double>> _licenseStatusSeries = new();
-    private string[] _licenseStatusLabels = Array.Empty<string>();
-    private List<ChartSeries<double>> _planSeries = new();
-    private string[] _planLabels = Array.Empty<string>();
-
+    private AdminDashboardDto? _d;
     private bool _loading = true;
-    private bool _loadFailed;
+    private bool _failed;
+    private bool _legacy;
+    private bool _refreshing;
+    private bool _auto = true;
+    private string _trafficView = "30";
+    private DateTime? _updatedAt;
 
-    protected override async Task OnInitializedAsync()
+    private List<AdBars.Column> _trafficDaily = new();
+    private List<AdBars.Column> _trafficHours = new();
+    private List<AdBars.Column> _invoiceDaily = new();
+    private List<AdBars.Column> _loginDaily = new();
+    private List<AdDonut.Slice> _licenseSlices = new();
+
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
+        await LoadAsync();
+        StartAutoRefresh();
+    }
+
+    private Task RefreshAsync() => LoadAsync();
+
+    private void OnAutoChanged(ChangeEventArgs e)
+    {
+        _auto = e.Value is true;
+        if (_auto) StartAutoRefresh();
+        else StopAutoRefresh();
+    }
+
+    private void StartAutoRefresh()
+    {
+        StopAutoRefresh();
+        if (!_auto) return;
+
+        var cts = _cts = new CancellationTokenSource();
+        _ = Task.Run(async () =>
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(60));
+            try
+            {
+                while (await timer.WaitForNextTickAsync(cts.Token))
+                    await InvokeAsync(() => LoadAsync(silent: true));
+            }
+            catch (OperationCanceledException) { }
+        });
+    }
+
+    private void StopAutoRefresh()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+    }
+
+    public override void Dispose()
+    {
+        StopAutoRefresh();
+        base.Dispose();
+    }
+
+    private async Task LoadAsync(bool silent = false)
+    {
+        if (_refreshing) return;
+        _refreshing = true;
+        if (!silent) StateHasChanged();
+
         try
         {
-            var clientsTask = ClientsApi.GetAllAsync();
-            var plansTask = PlansApi.GetAllAsync();
-            var licensesTask = LicensesApi.GetAllAsync();
-            await Task.WhenAll(clientsTask, plansTask, licensesTask);
+            var tz = await GetTzOffsetAsync();
 
-            _clients = clientsTask.Result;
-            _plans = plansTask.Result;
-            _licenses = licensesTask.Result;
+            try
+            {
+                _d = await InsightsApi.GetDashboardAsync(tz);
+                _legacy = false;
+            }
+            catch (ApiException ex) when (ex.StatusCode is 404 or 405)
+            {
+                // a license server that predates the dashboard endpoint: build what the old ones allow
+                _d = await LoadLegacyAsync();
+                _legacy = true;
+            }
 
-            BuildCharts();
+            _failed = false;
+            _updatedAt = DateTime.UtcNow;
+            BuildSeries(_d);
         }
-        catch (ApiException)
+        catch (ApiException ex)
         {
-            _loadFailed = true;
+            if (ex.StatusCode is 401 or 403) HandleError(ex);
+            else if (_d is null) _failed = true;   // keep showing the last good numbers on a failed refresh
         }
         finally
         {
             _loading = false;
+            _refreshing = false;
+            StateHasChanged();
         }
     }
 
-    private void BuildCharts()
+    private async Task<AdminDashboardDto> LoadLegacyAsync()
     {
-        var statusGroups = _licenses.GroupBy(l => l.Status).OrderByDescending(g => g.Count()).ToList();
-        _licenseStatusLabels = statusGroups.Select(g => g.Key).ToArray();
-        _licenseStatusSeries = new List<ChartSeries<double>>
-        {
-            new() { Name = "التراخيص", Data = statusGroups.Select(g => (double)g.Count()).ToArray() }
-        };
+        var clientsTask = ClientsApi.GetAllAsync();
+        var plansTask = PlansApi.GetAllAsync();
+        var licensesTask = LicensesApi.GetAllAsync();
+        await Task.WhenAll(clientsTask, plansTask, licensesTask);
 
-        var planCounts = _plans
-            .Select(p => new { p.Name, Count = _licenses.Count(l => l.PlanId == p.PlanId) })
-            .ToList();
-        _planLabels = planCounts.Select(p => p.Name).ToArray();
-        _planSeries = new List<ChartSeries<double>>
+        var clients = clientsTask.Result;
+        var plans = plansTask.Result;
+        var licenses = licensesTask.Result;
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        bool Live(LicenseDto l) => l.Status == "Active" && l.ExpiryDate >= now;
+
+        return new AdminDashboardDto
         {
-            new() { Name = "عدد التراخيص", Data = planCounts.Select(p => (double)p.Count).ToArray() }
+            GeneratedAt = now,
+            Clients = new DashboardClientsDto
+            {
+                Total = clients.Count,
+                Active = clients.Count(c => c.Status == "Active"),
+                Blocked = clients.Count(c => c.Status == "Blocked"),
+                NewThisMonth = clients.Count(c => c.CreatedAt >= monthStart)
+            },
+            Licenses = new DashboardLicensesDto
+            {
+                Total = licenses.Count,
+                Active = licenses.Count(Live),
+                Pending = licenses.Count(l => l.Status == "Pending"),
+                Suspended = licenses.Count(l => l.Status == "Suspended"),
+                Revoked = licenses.Count(l => l.Status == "Revoked"),
+                Expired = licenses.Count(l => l.Status == "Expired" || (l.Status == "Active" && l.ExpiryDate < now)),
+                ExpiringIn7Days = licenses.Count(l => Live(l) && l.ExpiryDate <= now.AddDays(7)),
+                ExpiringIn30Days = licenses.Count(l => Live(l) && l.ExpiryDate <= now.AddDays(30)),
+                ByPlan = plans
+                    .Select(p => new NamedCountDto { Name = p.Name, Count = licenses.Count(l => l.PlanId == p.PlanId) })
+                    .Where(x => x.Count > 0).OrderByDescending(x => x.Count).ToList(),
+                ByPlatform = licenses.GroupBy(l => l.Platform)
+                    .Select(g => new NamedCountDto { Name = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count).ToList()
+            }
         };
     }
+
+    private void BuildSeries(AdminDashboardDto d)
+    {
+        _licenseSlices = new List<AdDonut.Slice>
+        {
+            new("نشطة", d.Licenses.Active, "teal"),
+            new("قيد الانتظار", d.Licenses.Pending, "sky"),
+            new("منتهية", d.Licenses.Expired, "amber"),
+            new("موقوفة", d.Licenses.Suspended, "violet"),
+            new("ملغاة", d.Licenses.Revoked, "rose"),
+        };
+
+        var today = d.Traffic.Daily.Count > 0 ? d.Traffic.Daily[^1].Date : DateTime.MinValue;
+
+        _trafficDaily = d.Traffic.Daily.Select(x => new AdBars.Column(
+            DateFmt.FormatDay(x.Date),
+            $"{DateFmt.FormatDay(x.Date)}\nالإجمالي: {N(x.Total)}\nتراخيص: {N(x.License)}\nمزامنة: {N(x.Sync)}\nإدارة: {N(x.Admin)}" +
+                (x.Other > 0 ? $"\nأخرى: {N(x.Other)}" : "") + (x.Errors > 0 ? $"\nأخطاء: {N(x.Errors)}" : ""),
+            new double[] { x.License, x.Sync, x.Admin, x.Other },
+            x.Date == today)).ToList();
+
+        // the hours of today are cut at the admin's clock; the one that is running now is marked
+        var nowHour = DateFmt.LocalNow.Hour;
+        _trafficHours = d.Traffic.HoursToday.Select(h => new AdBars.Column(
+            $"{h.Hour:00}",
+            $"{h.Hour:00}:00 – {h.Hour:00}:59\n{N(h.Total)} طلب",
+            new double[] { h.Total },
+            h.Hour == nowHour)).ToList();
+
+        _invoiceDaily = d.Invoices.Daily.Select(x => new AdBars.Column(
+            DateFmt.FormatDay(x.Date),
+            $"{DateFmt.FormatDay(x.Date)}\n{N(x.Count)} فاتورة",
+            new double[] { x.Count },
+            x.Date == (d.Invoices.Daily.Count > 0 ? d.Invoices.Daily[^1].Date : DateTime.MinValue))).ToList();
+
+        _loginDaily = d.Logins.Daily.Select(x => new AdBars.Column(
+            DateFmt.FormatDay(x.Date),
+            $"{DateFmt.FormatDay(x.Date)}\nويندوز: {x.Desktop}\nموبايل: {x.Mobile}",
+            new double[] { x.Desktop, x.Mobile },
+            false)).ToList();
+    }
+
+    // ── formatting helpers ──
+
+    private static string N(long value) => value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string N(double value) =>
+        value >= 100 || value == Math.Floor(value)
+            ? Math.Round(value).ToString("N0", System.Globalization.CultureInfo.InvariantCulture)
+            : value.ToString("N1", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string PerSecond(long perHour)
+    {
+        var s = perHour / 3600.0;
+        return s < 0.01 ? "< 0.01" : s.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private double ProjectedMonth
+    {
+        get
+        {
+            var local = DateFmt.LocalNow;
+            return (_d?.Traffic.AvgPerDayThisMonth ?? 0) * DateTime.DaysInMonth(local.Year, local.Month);
+        }
+    }
+
+    private static string Initial(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "؟" : name.Trim()[..1].ToUpperInvariant();
+
+    private static RenderFragment TrendPill(long today, long yesterday) => builder =>
+    {
+        if (yesterday <= 0) return;
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "ad-pill ad-pill--info");
+        builder.AddContent(2, $"أمس {N(yesterday)}");
+        builder.CloseElement();
+    };
 }

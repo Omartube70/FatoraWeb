@@ -3,84 +3,128 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject CurrentAdminService CurrentAdmin
+@inject DateService Clock
 
 <MudThemeProvider Theme="@ThemeProvider.GetFatoraTheme()" IsDarkMode="_isDarkMode" DefaultScrollbar="false" />
+<MudRTLProvider RightToLeft="true">
 <MudPopoverProvider />
 <MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" CloseButton="true" />
 <MudSnackbarProvider />
 
-<div dir="rtl">
+<div class="ad-shell" dir="rtl">
 <MudLayout>
-    <MudAppBar Elevation="1" Color="Color.Surface">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Edge="Edge.Start" OnClick="@(() => _drawerOpen = !_drawerOpen)" />
-        <MudText Typo="Typo.h6" Class="ms-2">Fatora POS - لوحة الإدارة</MudText>
+    <MudAppBar Elevation="0" Class="ad-appbar">
+        <button type="button" class="fx-tool ad-menu-btn" @onclick="@(() => _drawerOpen = !_drawerOpen)"
+                title="القائمة" aria-label="القائمة">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+        </button>
+
+        <a class="fx-brand ad-brand" href="/admin" aria-label="Fatora POS">
+            <img class="fx-brand__logo" src="/images/Icon.ico" alt="" width="40" height="40" />
+            <span class="fx-brand__name">Fatora<small>الإدارة</small></span>
+        </a>
+
         <MudSpacer />
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       OnClick="ToggleTheme" Title="@(_isDarkMode ? "الوضع الفاتح" : "الوضع الداكن")" />
-        <MudMenu Icon="@Icons.Material.Filled.AccountCircle" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
-            <MudMenuItem Href="/admin/profile" Icon="@Icons.Material.Filled.Person">الملف الشخصي</MudMenuItem>
-            <MudMenuItem Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">الإعدادات</MudMenuItem>
-            <MudDivider />
-            <div class="px-3 py-1">
-                <form method="post" action="/admin/account/logout">
-                    <AntiforgeryToken />
-                    <button type="submit" class="admin-logout-link">
-                        <MudIcon Icon="@Icons.Material.Filled.Logout" Size="Size.Small" Class="me-2" />
-                        تسجيل الخروج
-                    </button>
-                </form>
-            </div>
+
+        <a class="fx-tool ad-site-link" href="/" target="_blank" rel="noopener" title="فتح الموقع">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></svg>
+            <span>الموقع</span>
+        </a>
+
+        <button type="button" class="fx-tool fx-tool--theme" data-ad-theme @onclick="ToggleTheme"
+                title="@(_isDarkMode ? "الوضع الفاتح" : "الوضع الداكن")" aria-label="تبديل الوضع الداكن / الفاتح">
+            <svg class="fx-theme__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none" />
+                <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7" />
+            </svg>
+            <svg class="fx-theme__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a.7.7 0 0 0-.9-.9A10 10 0 1 0 21.3 15.5a.7.7 0 0 0-.9-.9Z" />
+            </svg>
+        </button>
+
+        <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="ad-user-menu">
+            <ActivatorContent>
+                <span class="ad-user" role="button" tabindex="0">
+                    <span class="ad-user__avatar">@Initial</span>
+                    <span class="ad-user__name">@(_username ?? "المدير")</span>
+                </span>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Href="/admin/profile" Icon="@Icons.Material.Filled.Person">الملف الشخصي</MudMenuItem>
+                <MudMenuItem Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">الإعدادات</MudMenuItem>
+                <MudDivider />
+                <div class="px-3 py-1">
+                    <form method="post" action="/admin/account/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" class="admin-logout-link">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Size="Size.Small" Class="me-2" />
+                            تسجيل الخروج
+                        </button>
+                    </form>
+                </div>
+            </ChildContent>
         </MudMenu>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" Anchor="Anchor.Right">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Fatora POS</MudText>
-        </MudDrawerHeader>
-        <MudNavMenu>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Anchor="Anchor.Right" Class="ad-drawer">
+        <MudNavMenu Class="ad-nav">
             <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">الرئيسية</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1 mud-text-secondary">الإدارة</MudText>
+            <div class="ad-nav__label">الإدارة</div>
             <MudNavLink Href="/admin/clients" Icon="@Icons.Material.Filled.People">العملاء</MudNavLink>
             <MudNavLink Href="/admin/plans" Icon="@Icons.Material.Filled.CardMembership">الباقات</MudNavLink>
             <MudNavLink Href="/admin/licenses" Icon="@Icons.Material.Filled.VpnKey">التراخيص</MudNavLink>
-            <MudNavLink Href="/admin/activations" Icon="@Icons.Material.Filled.Devices">التفعيلات</MudNavLink>
+            <MudNavLink Href="/admin/devices" Icon="@Icons.Material.Filled.Devices">الأجهزة وآخر دخول</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1 mud-text-secondary">التقارير</MudText>
+            <div class="ad-nav__label">التقارير</div>
             <MudNavLink Href="/admin/activity-log" Icon="@Icons.Material.Filled.History">سجل العمليات</MudNavLink>
             <MudNavLink Href="/admin/shift-email" Icon="@Icons.Material.Filled.MarkEmailRead">بريد ملخص الوردية</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1 mud-text-secondary">النظام</MudText>
+            <div class="ad-nav__label">النظام</div>
             <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">الإعدادات</MudNavLink>
             <MudNavLink Href="/admin/profile" Icon="@Icons.Material.Filled.Person">الملف الشخصي</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4 pa-md-6">
+    <MudMainContent Class="ad-main">
+        <div class="ad-aurora" aria-hidden="true"></div>
+        <MudContainer MaxWidth="MaxWidth.False" Class="ad-container">
             <AdminBreadcrumbs />
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 </div>
+</MudRTLProvider>
 
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode;
+    private string? _username;
     private IJSObjectReference? _module;
+
+    private string Initial => string.IsNullOrWhiteSpace(_username) ? "A" : _username.Trim()[..1].ToUpperInvariant();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _username = await CurrentAdmin.GetUsernameAsync(); }
+        catch { /* the name is cosmetic */ }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender) return;
+
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "/admin.js");
+
+        // The browser's time zone, so every time on the page reads in the admin's own clock.
+        Clock.TzOffsetMinutes = await _module.InvokeAsync<int>("getTimezoneOffset");
+
+        var dark = await _module.InvokeAsync<string>("getTheme") == "dark";
+        if (dark != _isDarkMode)
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Layout/MainLayout.razor.js");
-            var savedDarkMode = await _module.InvokeAsync<bool>("getDarkModePreference");
-            if (savedDarkMode != _isDarkMode)
-            {
-                _isDarkMode = savedDarkMode;
-                StateHasChanged();
-            }
+            _isDarkMode = dark;
+            StateHasChanged();
         }
     }
 
@@ -88,9 +132,7 @@
     {
         _isDarkMode = !_isDarkMode;
         if (_module != null)
-        {
-            await _module.InvokeVoidAsync("saveDarkModePreference", _isDarkMode);
-        }
+            await _module.InvokeVoidAsync("setTheme", _isDarkMode ? "dark" : "light");
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()

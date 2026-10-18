@@ -1,0 +1,24 @@
+@* One headline number: an icon chip, the label, the value and a line of context under it. *@
+<article class="ad-kpi ad-tone-@Tone" style="--i:@Index">
+    <div class="ad-kpi__head">
+        <span class="ad-kpi__icon"><FxIcon Path="@Icon" /></span>
+        <span class="ad-kpi__label">@Label</span>
+    </div>
+    <div class="ad-kpi__value">@Value@if (!string.IsNullOrEmpty(Unit)){<small>@Unit</small>}</div>
+    <div class="ad-kpi__sub">@Sub</div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Icon { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter] public string? Unit { get; set; }
+
+    /// <summary>violet | teal | amber | sky | rose</summary>
+    [Parameter] public string Tone { get; set; } = "violet";
+
+    /// <summary>Position in the row; staggers the entrance.</summary>
+    [Parameter] public int Index { get; set; }
+
+    [Parameter] public RenderFragment? Sub { get; set; }
+}

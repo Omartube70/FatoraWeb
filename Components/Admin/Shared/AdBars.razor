@@ -1,0 +1,87 @@
+@* A column chart made of plain divs: one column per entry, stacked by series, with a hover tip. *@
+@{
+    var max = Niceish(Columns.Count == 0 ? 0 : Columns.Max(c => c.Values.Sum()));
+}
+<div class="ad-bars" style="--h:@(Height)px" role="img" aria-label="@AriaLabel">
+    <div class="ad-bars__plot">
+        <div class="ad-bars__grid" aria-hidden="true">
+            <span><i>@Compact(max)</i></span>
+            <span><i>@Compact(max * 2 / 3)</i></span>
+            <span><i>@Compact(max / 3)</i></span>
+            <span><i>0</i></span>
+        </div>
+
+        @for (var i = 0; i < Columns.Count; i++)
+        {
+            var col = Columns[i];
+            <div class="ad-bar" tabindex="0" data-tip="@col.Tip" style="--i:@i" data-now="@(col.IsCurrent ? "" : null)">
+                @for (var s = 0; s < col.Values.Length; s++)
+                {
+                    if (col.Values[s] <= 0) continue;
+                    <span class="ad-bar__seg ad-seg-@((SeriesColors.Length > s ? SeriesColors[s] : s) % 5)" style="height:@Pct(col.Values[s], max)"></span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="ad-bars__labels" aria-hidden="true">
+        @for (var i = 0; i < Columns.Count; i++)
+        {
+            <span>@(i % LabelEvery == 0 ? Columns[i].Label : "")</span>
+        }
+    </div>
+</div>
+
+@if (Series.Length > 1)
+{
+    <div class="ad-legend">
+        @for (var s = 0; s < Series.Length; s++)
+        {
+            <span><i class="ad-dot ad-seg-@((SeriesColors.Length > s ? SeriesColors[s] : s) % 5)"></i>@Series[s]</span>
+        }
+    </div>
+}
+
+@code {
+    public sealed record Column(string Label, string Tip, double[] Values, bool IsCurrent = false);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Column> Columns { get; set; } = Array.Empty<Column>();
+
+    /// <summary>Names of the stacked series (legend); a single series needs none.</summary>
+    [Parameter] public string[] Series { get; set; } = Array.Empty<string>();
+
+    /// <summary>Which of the five palette colours each series uses (0 violet, 1 teal, 2 amber, 3 sky, 4 rose).</summary>
+    [Parameter] public int[] SeriesColors { get; set; } = Array.Empty<int>();
+
+    [Parameter] public int Height { get; set; } = 190;
+
+    /// <summary>Show every Nth label under the columns.</summary>
+    [Parameter] public int LabelEvery { get; set; } = 1;
+
+    [Parameter] public string AriaLabel { get; set; } = "رسم بياني";
+
+    private static string Pct(double value, double max) =>
+        max <= 0 ? "0%" : $"{Math.Max(2, value / max * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%";
+
+    /// <summary>Rounds the top of the scale up to a tidy number so the grid lines read well.</summary>
+    private static double Niceish(double value)
+    {
+        if (value <= 0) return 1;
+        if (value <= 3) return 3;
+        var exp = Math.Pow(10, Math.Floor(Math.Log10(value)));
+        foreach (var step in new[] { 1.0, 1.5, 2, 3, 4, 5, 6, 7.5, 10 })
+        {
+            var candidate = step * exp;
+            if (candidate >= value) return candidate;
+        }
+        return value;
+    }
+
+    private static string Compact(double v) => v switch
+    {
+        >= 1_000_000 => $"{(v / 1_000_000).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}M",
+        >= 10_000 => $"{(v / 1000).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}k",
+        >= 1000 => $"{(v / 1000).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}k",
+        _ => Math.Round(v).ToString("0", System.Globalization.CultureInfo.InvariantCulture)
+    };
+}

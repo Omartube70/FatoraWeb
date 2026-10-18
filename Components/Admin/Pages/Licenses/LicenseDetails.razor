@@ -82,6 +82,8 @@ else
                 <MudTh>اسم الجهاز</MudTh>
                 <MudTh>نظام التشغيل</MudTh>
                 <MudTh>إصدار التطبيق</MudTh>
+                <MudTh>آخر دخول</MudTh>
+                <MudTh>آخر ظهور</MudTh>
                 <MudTh>الحالة</MudTh>
                 <MudTh>تاريخ التفعيل</MudTh>
                 <MudTh></MudTh>
@@ -91,6 +93,18 @@ else
                 <MudTd DataLabel="اسم الجهاز">@context.MachineName</MudTd>
                 <MudTd DataLabel="نظام التشغيل">@context.OperatingSystem</MudTd>
                 <MudTd DataLabel="إصدار التطبيق">@context.ApplicationVersion</MudTd>
+                <MudTd DataLabel="آخر دخول">
+                    @if (context.LastLoginAt is null)
+                    {
+                        <span class="ad-cell-sub">لم يُسجَّل بعد</span>
+                    }
+                    else
+                    {
+                        <div class="ad-cell-main">@context.LastLoginUser</div>
+                        <div class="ad-cell-sub" title="@DateFmt.FormatDateTime(context.LastLoginAt)">@DateFmt.FormatRelative(context.LastLoginAt) · @context.LoginCount مرة</div>
+                    }
+                </MudTd>
+                <MudTd DataLabel="آخر ظهور">@(context.LastSeenAt is null ? "—" : DateFmt.FormatRelative(context.LastSeenAt))</MudTd>
                 <MudTd DataLabel="الحالة"><StatusBadge Status="@context.Status" /></MudTd>
                 <MudTd DataLabel="تاريخ التفعيل">@DateFmt.FormatDateTime(context.ActivatedAt)</MudTd>
                 <MudTd>

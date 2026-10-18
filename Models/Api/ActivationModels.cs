@@ -11,6 +11,15 @@ public class ActivationDto
     public string ApplicationVersion { get; set; } = string.Empty;
     public DateTime ActivatedAt { get; set; }
     public DateTime? LastSeenAt { get; set; }
+
+    // Filled by a license server that tracks sign-ins; an older one leaves them empty.
+    public DateTime? LastLoginAt { get; set; }
+    public string? LastLoginUser { get; set; }
+    public int LoginCount { get; set; }
+
+    /// <summary>"Desktop" or "Mobile".</summary>
+    public string Platform { get; set; } = "Desktop";
+
     public string Status { get; set; } = string.Empty;
     public DateTime? DeactivatedAt { get; set; }
 }

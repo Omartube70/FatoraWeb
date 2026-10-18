@@ -1,0 +1,28 @@
+@* A list of labelled horizontal bars, each one a share of the biggest. *@
+@if (Items.Count == 0)
+{
+    <div class="ad-empty">لا توجد بيانات لعرضها</div>
+}
+else
+{
+    var max = Math.Max(1, Items.Max(i => i.Count));
+    <ul class="ad-meter">
+        @foreach (var item in Items)
+        {
+            <li class="ad-meter__row">
+                <div class="ad-meter__top"><span>@(Labeler?.Invoke(item.Name) ?? item.Name)</span><b>@item.Count</b></div>
+                <div class="ad-meter__bar"><i class="@Tone" style="--w:@((item.Count * 100.0 / max).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></i></div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<NamedCountDto> Items { get; set; } = Array.Empty<NamedCountDto>();
+
+    /// <summary>"", "is-teal", "is-amber" or "is-sky" (the default is the brand gradient).</summary>
+    [Parameter] public string Tone { get; set; } = "";
+
+    /// <summary>Turns a raw name (Desktop, Both ...) into the text to show.</summary>
+    [Parameter] public Func<string, string>? Labeler { get; set; }
+}
